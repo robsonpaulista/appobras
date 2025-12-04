@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compras - Diário de Obra Digital</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar expanded" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon" id="sidebarToggle" role="button" tabindex="0" aria-label="Recolher/Expandir menu">
+          <span class="sidebar-logo-letter">D</span>
+        </div>
+        <span class="sidebar-logo-text">Dynamics Obras</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-nav-item" title="Dashboard">
+        <div class="sidebar-nav-icon">
+          <i data-lucide="layout-dashboard"></i>
+        </div>
+        <span class="sidebar-nav-text">Dashboard</span>
+      </a>
+      <div class="sidebar-nav-group">
+        <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="cadastrosToggle" aria-expanded="false" title="Cadastros">
+          <div class="sidebar-nav-icon">
+            <i data-lucide="folder"></i>
+          </div>
+          <span class="sidebar-nav-text">Cadastros</span>
+          <div class="sidebar-nav-chevron">
+            <i data-lucide="chevron-right"></i>
+          </div>
+        </button>
+        <div class="sidebar-nav-submenu" id="cadastrosSubmenu">
+          <a href="/prestadores.html" class="sidebar-nav-item sidebar-nav-subitem" title="Prestadores">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="user-plus"></i>
+            </div>
+            <span class="sidebar-nav-text">Prestadores</span>
+          </a>
+          <a href="/locais.html" class="sidebar-nav-item sidebar-nav-subitem" title="Locais">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="map-pin"></i>
+            </div>
+            <span class="sidebar-nav-text">Locais</span>
+          </a>
+          <a href="/obras.html" class="sidebar-nav-item sidebar-nav-subitem" title="Obras">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="building-2"></i>
+            </div>
+            <span class="sidebar-nav-text">Obras</span>
+          </a>
+        </div>
+      </div>
+      
+      <div class="sidebar-nav-group">
+        <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="servicosToggle" aria-expanded="false" title="Serviços">
+          <div class="sidebar-nav-icon">
+            <i data-lucide="wrench"></i>
+          </div>
+          <span class="sidebar-nav-text">Serviços</span>
+          <div class="sidebar-nav-chevron">
+            <i data-lucide="chevron-right"></i>
+          </div>
+        </button>
+        <div class="sidebar-nav-submenu" id="servicosSubmenu">
+          <a href="/diario-obra.html" class="sidebar-nav-item sidebar-nav-subitem" title="Diário de Obra">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="clipboard-list"></i>
+            </div>
+            <span class="sidebar-nav-text">Diário de Obra</span>
+          </a>
+          <a href="/servicos-executados.html" class="sidebar-nav-item sidebar-nav-subitem" title="Serviços Executados">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="hard-hat"></i>
+            </div>
+            <span class="sidebar-nav-text">Serviços Executados</span>
+          </a>
+          <a href="/pendencias.html" class="sidebar-nav-item sidebar-nav-subitem" title="Pendências">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="alert-circle"></i>
+            </div>
+            <span class="sidebar-nav-text">Pendências</span>
+          </a>
+        </div>
+      </div>
+      
+      <a href="/compras.html" class="sidebar-nav-item active" title="Materiais">
+        <div class="sidebar-nav-icon">
+          <i data-lucide="shopping-cart"></i>
+        </div>
+        <span class="sidebar-nav-text">Materiais</span>
+      </a>
+      <a href="/financeiro.html" class="sidebar-nav-item" title="Financeiro">
+        <div class="sidebar-nav-icon">
+          <i data-lucide="dollar-sign"></i>
+        </div>
+        <span class="sidebar-nav-text">Financeiro</span>
+      </a>
+      <a href="/relatorios.html" class="sidebar-nav-item" title="Relatórios">
+        <div class="sidebar-nav-icon">
+          <i data-lucide="bar-chart-3"></i>
+        </div>
+        <span class="sidebar-nav-text">Relatórios</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-icon">
+          <i data-lucide="user"></i>
+        </div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sidebarUserName">Usuário</div>
+        </div>
+      </div>
+      <button type="button" id="sidebarLogoutBtn" class="sidebar-logout">
+        <i data-lucide="log-out" class="sidebar-logout-icon"></i>
+        <span>Sair</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Overlay para mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="container">
+    <header>
+      <div class="header-top">
+        <div class="header-left">
+          <button type="button" class="menu-toggle" id="menuToggle" aria-label="Menu">
+            <i data-lucide="menu" class="menu-icon"></i>
+          </button>
+          <div>
+            <h1>
+              <i data-lucide="shopping-cart" class="header-icon"></i>
+              Compras de Materiais
+            </h1>
+            <p class="subtitle">Registre as compras de materiais para as obras</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <form id="compraForm" enctype="multipart/form-data">
+      <div class="form-section">
+        <h2>Nova Compra</h2>
+        
+        <div class="ios-grouped-container">
+          <div class="form-field-group">
+            <label for="obraId" class="form-field-label">Obra</label>
+            <select id="obraId" name="obraId" required class="input-field">
+              <option value="">Selecione a obra...</option>
+            </select>
+          </div>
+          <div class="form-field-group">
+            <label for="localId" class="form-field-label">Local</label>
+            <select id="localId" name="localId" required class="input-field">
+              <option value="">Selecione o local...</option>
+            </select>
+          </div>
+          <div class="form-field-group">
+            <label for="data" class="form-field-label">Data</label>
+            <input 
+              type="date" 
+              id="data" 
+              name="data" 
+              required 
+              class="input-field"
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="fornecedor" class="form-field-label">Fornecedor</label>
+            <input 
+              type="text" 
+              id="fornecedor" 
+              name="fornecedor" 
+              placeholder="Digite o nome do fornecedor" 
+              class="input-field" 
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="comprador" class="form-field-label">Comprador</label>
+            <input 
+              type="text" 
+              id="comprador" 
+              name="comprador" 
+              placeholder="Ex: Construtora, Cliente, etc." 
+              class="input-field" 
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="valorNota" class="form-field-label">Valor da Nota (R$)</label>
+            <input 
+              type="number" 
+              id="valorNota" 
+              name="valorNota" 
+              step="0.01"
+              min="0"
+              placeholder="0,00" 
+              class="input-field" 
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="descricao" class="form-field-label">Descrição</label>
+            <textarea 
+              id="descricao" 
+              name="descricao" 
+              placeholder="Descrição da compra (materiais, quantidades, etc.)" 
+              class="input-field textarea-field"
+              required
+            ></textarea>
+          </div>
+          <div class="form-field-group">
+            <label for="anexo" class="form-field-label">Anexar Recibo/Cupom/Nota Fiscal</label>
+            <input 
+              type="file" 
+              id="anexo" 
+              name="anexo" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              class="input-field file-input" 
+              required
+            >
+            <small style="color: var(--ios-text-secondary); font-size: 13px; margin-top: 4px; display: block;">
+              PDF, JPG, PNG - Máx. 10MB
+            </small>
+            <div id="filePreview" class="file-preview" style="display: none; margin-top: 8px;">
+              <i data-lucide="file" class="preview-icon"></i>
+              <span id="fileName"></span>
+              <button type="button" class="btn-remove-file" onclick="removerAnexo()">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          <i data-lucide="save"></i>
+          <span>Registrar Compra</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="form-section">
+      <h2>
+        <span class="section-indicator"></span>
+        <span>Compras Registradas</span>
+      </h2>
+      <div id="comprasList" class="compras-list">
+        <p class="loading">Carregando compras...</p>
+      </div>
+    </div>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <!-- Modal de Edição -->
+  <div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Editar Compra</h2>
+        <button type="button" class="modal-close" onclick="fecharModalEdicao()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="editCompraForm" enctype="multipart/form-data">
+        <input type="hidden" id="editCompraId" name="id">
+        <div class="ios-grouped-container">
+          <div class="form-field-group">
+            <label for="editObraId" class="form-field-label">Obra</label>
+            <select id="editObraId" name="obraId" required class="input-field">
+              <option value="">Selecione a obra...</option>
+            </select>
+          </div>
+          <div class="form-field-group">
+            <label for="editLocalId" class="form-field-label">Local</label>
+            <select id="editLocalId" name="localId" required class="input-field">
+              <option value="">Selecione o local...</option>
+            </select>
+          </div>
+          <div class="form-field-group">
+            <label for="editData" class="form-field-label">Data</label>
+            <input 
+              type="date" 
+              id="editData" 
+              name="data" 
+              required 
+              class="input-field"
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="editFornecedor" class="form-field-label">Fornecedor</label>
+            <input 
+              type="text" 
+              id="editFornecedor" 
+              name="fornecedor" 
+              placeholder="Digite o nome do fornecedor" 
+              class="input-field" 
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="editComprador" class="form-field-label">Comprador</label>
+            <input 
+              type="text" 
+              id="editComprador" 
+              name="comprador" 
+              placeholder="Ex: Construtora, Cliente, etc." 
+              class="input-field" 
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="editValorNota" class="form-field-label">Valor da Nota (R$)</label>
+            <input 
+              type="number" 
+              id="editValorNota" 
+              name="valorNota" 
+              step="0.01"
+              min="0"
+              placeholder="0,00" 
+              class="input-field" 
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="editDescricao" class="form-field-label">Descrição</label>
+            <textarea 
+              id="editDescricao" 
+              name="descricao" 
+              placeholder="Descrição da compra (materiais, quantidades, etc.)" 
+              class="input-field textarea-field"
+              required
+            ></textarea>
+          </div>
+          <div class="form-field-group">
+            <label for="editAnexo" class="form-field-label">Anexar Novo Recibo/Cupom/Nota Fiscal (opcional)</label>
+            <input 
+              type="file" 
+              id="editAnexo" 
+              name="anexo" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              class="input-field file-input"
+            >
+            <small style="color: var(--ios-text-secondary); font-size: 13px; margin-top: 4px; display: block;">
+              Deixe em branco para manter o anexo atual. PDF, JPG, PNG - Máx. 10MB
+            </small>
+            <div id="editFilePreview" class="file-preview" style="display: none; margin-top: 8px;">
+              <i data-lucide="file" class="preview-icon"></i>
+              <span id="editFileName"></span>
+              <button type="button" class="btn-remove-file" onclick="removerAnexoEdicao()">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModalEdicao()">Cancelar</button>
+          <button type="submit" class="btn-submit">
+            <i data-lucide="save"></i>
+            <span>Salvar Alterações</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="compras.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
+

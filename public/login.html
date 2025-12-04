@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#007AFF">
+  <title>Login - Dynamics Obras</title>
+  <link rel="stylesheet" href="login.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-background">
+      <div class="background-shape shape-1"></div>
+      <div class="background-shape shape-2"></div>
+      <div class="background-shape shape-3"></div>
+    </div>
+    
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="logo-icon">
+            <i data-lucide="building-2" class="logo-svg"></i>
+          </div>
+          <h1>Dynamics Obras</h1>
+          <p class="login-subtitle">Sistema de Gestão de Obras</p>
+        </div>
+
+        <form id="loginForm" class="login-form">
+          <div class="ios-grouped-container">
+            <div class="form-field-group">
+              <label for="email" class="form-field-label">
+                Email
+              </label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                required 
+                class="input-field"
+                placeholder="seu@email.com"
+                autocomplete="email"
+                autocapitalize="none"
+              >
+            </div>
+            
+            <div class="form-field-group">
+              <label for="senha" class="form-field-label">
+                Senha
+              </label>
+              <div class="password-wrapper">
+                <input 
+                  type="password" 
+                  id="senha" 
+                  name="senha" 
+                  required 
+                  class="input-field"
+                  placeholder="••••••••"
+                  autocomplete="current-password"
+                >
+                <button type="button" class="password-toggle" id="togglePassword" aria-label="Mostrar senha">
+                  <i data-lucide="eye" class="eye-icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-login" id="loginBtn">
+            <span class="btn-text">Entrar</span>
+            <i data-lucide="arrow-right" class="btn-icon"></i>
+          </button>
+        </form>
+        
+        <div id="message" class="login-message"></div>
+      </div>
+      
+      <div class="login-footer">
+        <p>&copy; 2024 Dynamics Obras. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="login.js"></script>
+  <script>
+    // Inicializar ícones Lucide
+    lucide.createIcons();
+  </script>
+</body>
+</html>
+

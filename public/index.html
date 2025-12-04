@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diário de Obra Digital</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar expanded" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon" id="sidebarToggle" role="button" tabindex="0" aria-label="Recolher/Expandir menu">
+          <span class="sidebar-logo-letter">D</span>
+        </div>
+        <span class="sidebar-logo-text">Dynamics Obras</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-nav-item" title="Dashboard">
+        <div class="sidebar-nav-icon">
+          <i data-lucide="layout-dashboard"></i>
+        </div>
+        <span class="sidebar-nav-text">Dashboard</span>
+      </a>
+      <div class="sidebar-nav-group">
+        <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="cadastrosToggle" aria-expanded="false" title="Cadastros">
+          <div class="sidebar-nav-icon">
+            <i data-lucide="folder"></i>
+          </div>
+          <span class="sidebar-nav-text">Cadastros</span>
+          <div class="sidebar-nav-chevron">
+            <i data-lucide="chevron-right"></i>
+          </div>
+        </button>
+        <div class="sidebar-nav-submenu" id="cadastrosSubmenu">
+          <a href="/prestadores.html" class="sidebar-nav-item sidebar-nav-subitem" title="Prestadores">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="user-plus"></i>
+            </div>
+            <span class="sidebar-nav-text">Prestadores</span>
+          </a>
+          <a href="/locais.html" class="sidebar-nav-item sidebar-nav-subitem" title="Locais">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="map-pin"></i>
+            </div>
+            <span class="sidebar-nav-text">Locais</span>
+          </a>
+          <a href="/obras.html" class="sidebar-nav-item sidebar-nav-subitem" title="Obras">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="building-2"></i>
+            </div>
+            <span class="sidebar-nav-text">Obras</span>
+          </a>
+        </div>
+      </div>
+      
+      <div class="sidebar-nav-group">
+        <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="servicosToggle" aria-expanded="true" title="Serviços">
+          <div class="sidebar-nav-icon">
+            <i data-lucide="wrench"></i>
+          </div>
+          <span class="sidebar-nav-text">Serviços</span>
+          <div class="sidebar-nav-chevron">
+            <i data-lucide="chevron-right"></i>
+          </div>
+        </button>
+        <div class="sidebar-nav-submenu" id="servicosSubmenu">
+          <a href="/diario-obra.html" class="sidebar-nav-item sidebar-nav-subitem active" title="Diário de Obra">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="clipboard-list"></i>
+            </div>
+            <span class="sidebar-nav-text">Diário de Obra</span>
+          </a>
+          <a href="/servicos-executados.html" class="sidebar-nav-item sidebar-nav-subitem" title="Serviços Executados">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="hard-hat"></i>
+            </div>
+            <span class="sidebar-nav-text">Serviços Executados</span>
+          </a>
+          <a href="/pendencias.html" class="sidebar-nav-item sidebar-nav-subitem" title="Pendências">
+            <div class="sidebar-nav-icon">
+              <i data-lucide="alert-circle"></i>
+            </div>
+            <span class="sidebar-nav-text">Pendências</span>
+          </a>
+        </div>
+      </div>
+      
+      <a href="/compras.html" class="sidebar-nav-item" title="Materiais">
+        <div class="sidebar-nav-icon">
+          <i data-lucide="shopping-cart"></i>
+        </div>
+        <span class="sidebar-nav-text">Materiais</span>
+      </a>
+      <a href="/financeiro.html" class="sidebar-nav-item" title="Financeiro">
+        <div class="sidebar-nav-icon">
+          <i data-lucide="dollar-sign"></i>
+        </div>
+        <span class="sidebar-nav-text">Financeiro</span>
+      </a>
+      <a href="/relatorios.html" class="sidebar-nav-item" title="Relatórios">
+        <div class="sidebar-nav-icon">
+          <i data-lucide="bar-chart-3"></i>
+        </div>
+        <span class="sidebar-nav-text">Relatórios</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-icon">
+          <i data-lucide="user"></i>
+        </div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sidebarUserName">Usuário</div>
+        </div>
+      </div>
+      <button type="button" id="sidebarLogoutBtn" class="sidebar-logout">
+        <i data-lucide="log-out" class="sidebar-logout-icon"></i>
+        <span>Sair</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Overlay para mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="container">
+    <header>
+      <div class="header-top">
+        <div class="header-left">
+          <button type="button" class="menu-toggle" id="menuToggle" aria-label="Menu">
+            <i data-lucide="menu" class="menu-icon"></i>
+          </button>
+          <div>
+            <h1>Diário de Obra Digital</h1>
+            <p class="subtitle">Registro obrigatório até 18h</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <form id="diarioForm" enctype="multipart/form-data">
+      <div class="form-section">
+        <h2>
+          <span class="section-indicator"></span>
+          <span>Serviços Executados no Dia</span>
+        </h2>
+        <p class="section-description">
+          (Descrever detalhadamente por função ou por setor da obra)
+        </p>
+        
+        <div class="form-header-fields">
+          <select id="obraId" name="obraId" required class="input-field">
+            <option value="">Selecione a obra...</option>
+          </select>
+          <select id="localId" name="localId" required class="input-field">
+            <option value="">Selecione o local...</option>
+          </select>
+          <input 
+            type="date" 
+            id="data" 
+            name="data" 
+            required 
+            class="input-field"
+          >
+        </div>
+        
+        <div class="ios-grouped-container" id="servicosContainer" data-section="servicos">
+          <div class="servico-item">
+            <div class="servico-header">
+              <input 
+                type="text" 
+                placeholder="Atividade" 
+                class="input-field" 
+                data-field="atividade"
+                required
+              >
+            </div>
+            
+            <div class="profissionais-section">
+              <label class="section-label">
+                <i data-lucide="users" class="label-icon"></i>
+                Profissionais Envolvidos
+              </label>
+              <div class="profissionais-list" data-field="profissionais">
+                <div class="profissional-row">
+                  <select 
+                    class="input-field input-small" 
+                    data-field="prestadorId"
+                    onchange="selecionarPrestador(this)"
+                  >
+                    <option value="">Selecione o prestador...</option>
+                  </select>
+                  <input 
+                    type="text" 
+                    placeholder="Nome" 
+                    class="input-field input-small" 
+                    data-field="nome"
+                    readonly
+                  >
+                  <input 
+                    type="text" 
+                    placeholder="Função" 
+                    class="input-field input-small" 
+                    data-field="funcao"
+                    readonly
+                  >
+                  <div class="time-inputs-small">
+                    <input 
+                      type="time" 
+                      placeholder="Entrada" 
+                      class="input-field input-small" 
+                      data-field="entrada"
+                    >
+                    <input 
+                      type="time" 
+                      placeholder="Saída" 
+                      class="input-field input-small"
+                      data-field="saida"
+                    >
+                  </div>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    min="0"
+                    placeholder="Valor da Diária (R$)" 
+                    class="input-field input-small input-money" 
+                    data-field="valorMaoObra"
+                  >
+                  <button type="button" class="btn-remove-small" onclick="removerProfissionalServico(this)" aria-label="Remover profissional">
+                    <i data-lucide="x"></i>
+                  </button>
+                </div>
+              </div>
+              <button type="button" class="btn-add-small" onclick="adicionarProfissionalServico(this)">
+                <i data-lucide="user-plus"></i>
+                <span>Adicionar Profissional</span>
+              </button>
+            </div>
+            
+            <div class="servico-footer">
+              <input 
+                type="text" 
+                placeholder="Percentual Avanço (ex: +12%)" 
+                class="input-field" 
+                data-field="percentualAvancado"
+              >
+              <textarea 
+                placeholder="Observações" 
+                class="input-field textarea-field" 
+                data-field="observacoes"
+              ></textarea>
+            </div>
+            
+            <button type="button" class="btn-remove" onclick="removerServico(this)" aria-label="Remover serviço">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div style="padding: 0 16px; margin-top: 16px;">
+          <button type="button" class="btn-add" onclick="adicionarServico()">
+            <i data-lucide="plus-circle"></i>
+            <span>Adicionar Serviço</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>
+          <span class="section-indicator"></span>
+          <span>4. Pendências do Dia</span>
+        </h2>
+        <p class="section-description">
+          Pendências registradas anteriormente para esta obra/local
+        </p>
+        
+        <div id="pendenciasRegistradas" style="margin-bottom: 24px;">
+          <p class="loading" style="text-align: center; padding: 20px; color: var(--ios-text-secondary);">
+            Carregando pendências...
+          </p>
+        </div>
+        
+        <h3 style="font-size: 17px; font-weight: 600; color: var(--ios-text-primary); margin-bottom: 16px; padding: 0 16px;">
+          Adicionar Nova Pendência
+        </h3>
+        <div class="ios-grouped-container" id="pendenciasContainer" data-section="pendencias">
+          <div class="pendencias-item">
+            <textarea 
+              placeholder="Descrição da pendência" 
+              class="input-field textarea-field" 
+              data-field="descricao"
+            ></textarea>
+            <select class="input-field" data-field="prioridade">
+              <option value="Baixa">Baixa</option>
+              <option value="Média" selected>Média</option>
+              <option value="Alta">Alta</option>
+            </select>
+            <input 
+              type="text" 
+              placeholder="Responsável" 
+              class="input-field" 
+              data-field="responsavel"
+            >
+            <button type="button" class="btn-remove" onclick="removerPendencia(this)" aria-label="Remover pendência">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div style="padding: 0 16px; margin-top: 16px;">
+          <button type="button" class="btn-add" onclick="adicionarPendencia()">
+            <i data-lucide="alert-circle"></i>
+            <span>Adicionar Pendência</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-submit">
+          <i data-lucide="save"></i>
+          <span>Registrar Diário de Obra</span>
+        </button>
+      </div>
+    </form>
+
+    <div id="message" class="message" role="alert" aria-live="polite"></div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Inicializar ícones Lucide
+    lucide.createIcons();
+  </script>
+</body>
+</html>
+
