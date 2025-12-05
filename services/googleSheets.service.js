@@ -151,6 +151,50 @@ class GoogleSheetsService {
     }
   }
 
+  async verificarOuCriarAba(sheetName, headersArray) {
+    try {
+      if (!this.spreadsheetId || !this.sheets) {
+        return;
+      }
+
+      const spreadsheet = await this.sheets.spreadsheets.get({
+        spreadsheetId: this.spreadsheetId,
+      });
+
+      const existingSheets = spreadsheet.data.sheets.map(sheet => sheet.properties.title);
+      
+      if (!existingSheets.includes(sheetName)) {
+        await this.sheets.spreadsheets.batchUpdate({
+          spreadsheetId: this.spreadsheetId,
+          requestBody: {
+            requests: [{
+              addSheet: {
+                properties: {
+                  title: sheetName,
+                },
+              },
+            }],
+          },
+        });
+
+        // Adicionar cabeçalhos
+        if (headersArray && headersArray.length > 0) {
+          await this.sheets.spreadsheets.values.update({
+            spreadsheetId: this.spreadsheetId,
+            range: `${sheetName}!A1`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+              values: [headersArray],
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`Erro ao verificar/criar aba ${sheetName}:`, error);
+      // Não lança erro para não quebrar o registro principal
+    }
+  }
+
   async addHeaders(sheetName) {
     let headers = [];
     
@@ -259,6 +303,126 @@ class GoogleSheetsService {
     }
   }
 
+  async buscarHorariosProfissionais({ obraId, dataInicio, dataFim }) {
+    if (!this.sheets || !this.spreadsheetId) {
+      return [];
+    }
+
+    try {
+      let response;
+      try {
+        response = await this.sheets.spreadsheets.values.get({
+          spreadsheetId: this.spreadsheetId,
+          range: 'ProfissionaisHorarios!A2:H',
+          valueRenderOption: 'FORMATTED_VALUE',
+        });
+      } catch (error) {
+        // Se a aba não existir, retornar array vazio
+        if (error.message && error.message.includes('Unable to parse range')) {
+          return [];
+        }
+        throw error;
+      }
+
+      if (!response.data || !response.data.values) {
+        return [];
+      }
+
+      const rows = response.data.values.filter(row => row && row.length > 0 && row[0]);
+
+      if (rows.length === 0) {
+        return [];
+      }
+
+      // Função para converter data
+      const converterData = (valor) => {
+        if (!valor) return '';
+        if (typeof valor === 'number') {
+          const excelEpoch = new Date(1899, 11, 30);
+          const dataObj = new Date(excelEpoch.getTime() + (valor - 1) * 24 * 60 * 60 * 1000);
+          if (!isNaN(dataObj.getTime())) {
+            const ano = dataObj.getFullYear();
+            const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+            const dia = String(dataObj.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+          }
+        }
+        const dataStr = valor.toString().trim();
+        const partes = dataStr.split('/');
+        if (partes.length === 3) {
+          return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+        }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
+          return dataStr;
+        }
+        return dataStr;
+      };
+
+      let horarios = rows.map((row) => ({
+        data: converterData(row[0]),
+        obra: row[1] || '',
+        local: row[2] || '',
+        profissional: row[3] || '',
+        funcao: row[4] || '',
+        entrada: row[5] || '',
+        saida: row[6] || '',
+        horasTrabalhadas: row[7] || '',
+      }));
+
+      // Aplicar filtros
+      if (obraId) {
+        horarios = horarios.filter(h => {
+          const obraHorario = (h.obra || '').toString().trim();
+          const obraFiltro = obraId.toString().trim();
+          return obraHorario === obraFiltro || 
+                 obraHorario.toLowerCase() === obraFiltro.toLowerCase();
+        });
+      }
+
+      // Função auxiliar para converter data
+      const parsearData = (dataStr) => {
+        if (!dataStr) return null;
+        try {
+          const partes = dataStr.toString().split('/');
+          if (partes.length === 3) {
+            const dia = parseInt(partes[0], 10);
+            const mes = parseInt(partes[1], 10) - 1;
+            const ano = parseInt(partes[2], 10);
+            return new Date(ano, mes, dia);
+          }
+          return new Date(dataStr);
+        } catch {
+          return null;
+        }
+      };
+
+      if (dataInicio) {
+        const dataInicioFiltro = new Date(dataInicio);
+        horarios = horarios.filter(h => {
+          if (!h.data) return false;
+          const dataHorario = parsearData(h.data);
+          if (!dataHorario || isNaN(dataHorario.getTime())) return false;
+          return dataHorario >= dataInicioFiltro;
+        });
+      }
+
+      if (dataFim) {
+        const dataFimFiltro = new Date(dataFim);
+        horarios = horarios.filter(h => {
+          if (!h.data) return false;
+          const dataHorario = parsearData(h.data);
+          if (!dataHorario || isNaN(dataHorario.getTime())) return false;
+          return dataHorario <= dataFimFiltro;
+        });
+      }
+
+      return horarios;
+    } catch (error) {
+      console.error('Erro ao buscar horários dos profissionais:', error);
+      return [];
+    }
+  }
+
   async registrarServicos(data, servicos, obraId) {
     if (!this.spreadsheetId) {
       throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID não configurado');
@@ -290,6 +454,56 @@ class GoogleSheetsService {
         values,
       },
     });
+
+    // Registrar horários dos profissionais em uma aba separada
+    if (servicos.some(serv => serv.profissionaisDetalhados && serv.profissionaisDetalhados.length > 0)) {
+      await this.registrarHorariosProfissionais(data, servicos, obraId);
+    }
+  }
+
+  async registrarHorariosProfissionais(data, servicos, obraId) {
+    try {
+      // Verificar se a aba existe, se não, criar
+      await this.verificarOuCriarAba('ProfissionaisHorarios', [
+        'Data', 'Obra', 'Local', 'Profissional', 'Função', 'Entrada', 'Saída', 'Horas Trabalhadas'
+      ]);
+
+      const values = [];
+      
+      servicos.forEach(serv => {
+        if (serv.profissionaisDetalhados && Array.isArray(serv.profissionaisDetalhados)) {
+          serv.profissionaisDetalhados.forEach(prof => {
+            if (prof.nome && prof.entrada) {
+              values.push([
+                data,  // A: Data
+                obraId || serv.obra || '',  // B: Obra
+                serv.local || '',  // C: Local
+                prof.nome || '',  // D: Profissional
+                prof.funcao || '',  // E: Função
+                prof.entrada || '',  // F: Entrada
+                prof.saida || '',  // G: Saída
+                prof.horasTrabalhadas || '',  // H: Horas Trabalhadas
+              ]);
+            }
+          });
+        }
+      });
+
+      if (values.length > 0) {
+        await this.sheets.spreadsheets.values.append({
+          spreadsheetId: this.spreadsheetId,
+          range: 'ProfissionaisHorarios!A2',
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          requestBody: {
+            values,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao registrar horários dos profissionais:', error);
+      // Não lança erro para não quebrar o registro principal
+    }
   }
 
   async registrarPendencias(data, pendencias, obraId, localId) {
@@ -684,21 +898,458 @@ class GoogleSheetsService {
 
   // Métodos para Relatórios
   async gerarRelatorioDiario({ obraId, dataInicio, dataFim }) {
-    // Implementação básica - pode ser expandida
-    return { message: 'Relatório de diário em desenvolvimento' };
+    if (!this.sheets || !this.spreadsheetId) {
+      return { obras: [], message: 'Google Sheets não inicializado' };
+    }
+
+    try {
+      // Buscar serviços executados
+      const servicos = await this.buscarServicosExecutados({
+        obraId,
+        localId: null,
+        dataInicio,
+        dataFim,
+      });
+
+      // Buscar pendências
+      const pendencias = await this.buscarPendencias({
+        obraId,
+        localId: null,
+        status: null,
+        dataInicio,
+        dataFim,
+      });
+
+      // Buscar todas as obras para ter a lista completa
+      const todasObras = await this.buscarObras();
+
+      // Agrupar dados por obra e data
+      const obrasMap = {};
+
+      // Inicializar obras
+      todasObras.forEach(obra => {
+        const obraKey = obra.descricao || obra.nome || obra.id;
+        if (!obrasMap[obraKey]) {
+          obrasMap[obraKey] = {
+            obra: obraKey,
+            obraId: obra.id,
+            local: obra.local || '',
+            registros: [],
+          };
+        }
+      });
+
+      // Adicionar serviços ao relatório
+      servicos.forEach(servico => {
+        const obraKey = servico.obra || 'Sem obra';
+        if (!obrasMap[obraKey]) {
+          obrasMap[obraKey] = {
+            obra: obraKey,
+            obraId: '',
+            local: servico.local || '',
+            registros: [],
+          };
+        }
+
+        const dataKey = servico.data || 'Sem data';
+        if (!obrasMap[obraKey].registros.find(r => r.data === dataKey)) {
+          obrasMap[obraKey].registros.push({
+            data: dataKey,
+            servicos: [],
+            pendencias: [],
+          });
+        }
+
+        const registro = obrasMap[obraKey].registros.find(r => r.data === dataKey);
+        registro.servicos.push({
+          atividade: servico.atividade || '',
+          local: servico.local || '',
+          profissionaisEnvolvidos: servico.profissionaisEnvolvidos || '',
+          percentualAvancado: servico.percentualAvancado || '',
+          observacoes: servico.observacoes || '',
+        });
+      });
+
+      // Adicionar pendências ao relatório
+      pendencias.forEach(pendencia => {
+        const obraKey = pendencia.obra || 'Sem obra';
+        if (!obrasMap[obraKey]) {
+          obrasMap[obraKey] = {
+            obra: obraKey,
+            obraId: '',
+            local: pendencia.local || '',
+            registros: [],
+          };
+        }
+
+        const dataKey = pendencia.data || 'Sem data';
+        if (!obrasMap[obraKey].registros.find(r => r.data === dataKey)) {
+          obrasMap[obraKey].registros.push({
+            data: dataKey,
+            servicos: [],
+            pendencias: [],
+          });
+        }
+
+        const registro = obrasMap[obraKey].registros.find(r => r.data === dataKey);
+        registro.pendencias.push({
+          descricao: pendencia.descricao || '',
+          local: pendencia.local || '',
+          prioridade: pendencia.prioridade || '',
+          status: pendencia.status || 'Pendente',
+          responsavel: pendencia.responsavel || '',
+        });
+      });
+
+      // Converter para array e ordenar
+      const obras = Object.values(obrasMap)
+        .filter(obra => obra.registros.length > 0) // Apenas obras com registros
+        .map(obra => {
+          // Ordenar registros por data (mais recente primeiro)
+          obra.registros.sort((a, b) => {
+            try {
+              const dataA = new Date(a.data);
+              const dataB = new Date(b.data);
+              if (isNaN(dataA.getTime()) || isNaN(dataB.getTime())) return 0;
+              return dataB - dataA;
+            } catch {
+              return 0;
+            }
+          });
+          return obra;
+        })
+        .sort((a, b) => {
+          // Ordenar obras por nome
+          return (a.obra || '').localeCompare(b.obra || '');
+        });
+
+      return {
+        obras,
+        totalObras: obras.length,
+        totalRegistros: obras.reduce((sum, obra) => sum + obra.registros.length, 0),
+        periodo: {
+          dataInicio: dataInicio || null,
+          dataFim: dataFim || null,
+        },
+      };
+    } catch (error) {
+      console.error('Erro ao gerar relatório de diário:', error);
+      throw error;
+    }
   }
 
-  async gerarRelatorioProfissionais({ obraId, dataInicio, dataFim }) {
+  async gerarRelatorioProfissionais({ obraId, dataInicio, dataFim, profissionalNome }) {
     if (!this.sheets || !this.spreadsheetId) {
       return { profissionais: [] };
     }
 
     try {
-      const profissionais = await this.buscarProfissionais();
-      return { profissionais };
+      // Buscar todas as obras para mapear IDs para descrições
+      const todasObras = await this.buscarObras();
+      const obrasMap = new Map();
+      todasObras.forEach(obra => {
+        obrasMap.set(obra.id, obra.descricao || obra.nome || '');
+        obrasMap.set(obra.descricao || obra.nome || '', obra.descricao || obra.nome || '');
+      });
+
+      // Buscar todos os serviços executados
+      const servicos = await this.buscarServicosExecutados({
+        obraId,
+        localId: null,
+        dataInicio,
+        dataFim,
+      });
+
+      // Buscar horários dos profissionais (sem filtro de obra para pegar todos)
+      const horariosProfissionais = await this.buscarHorariosProfissionais({
+        obraId: null, // Buscar todos para depois filtrar
+        dataInicio,
+        dataFim,
+      });
+
+      // Buscar lista de profissionais cadastrados
+      const profissionaisCadastrados = await this.buscarProfissionais();
+      const profissionaisMap = new Map();
+      profissionaisCadastrados.forEach(prof => {
+        profissionaisMap.set(prof.nome.toLowerCase(), prof);
+      });
+
+      // Agrupar por profissional
+      const profissionaisRelatorio = {};
+
+      // Função para normalizar data para comparação
+      const normalizarData = (dataStr) => {
+        if (!dataStr) return '';
+        // Se já está no formato YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
+          return dataStr;
+        }
+        // Tentar converter de DD/MM/YYYY para YYYY-MM-DD
+        const partes = dataStr.toString().split('/');
+        if (partes.length === 3) {
+          return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+        }
+        return dataStr;
+      };
+
+      // Função para normalizar nome da obra
+      const normalizarObra = (obra) => {
+        return (obra || '').toString().trim().toLowerCase();
+      };
+
+      // Criar um mapa de profissionais com horários por data/obra
+      const profissionaisHorariosMap = {};
+
+      // Popular mapa de horários - agrupar por nome, data e obra
+      horariosProfissionais.forEach(horario => {
+        const nomeKey = (horario.profissional || '').toLowerCase().trim();
+        const dataKey = normalizarData(horario.data);
+        let obraKey = normalizarObra(horario.obra);
+        
+        // Tentar converter obra ID para descrição se necessário
+        if (obrasMap.has(obraKey)) {
+          obraKey = normalizarObra(obrasMap.get(obraKey));
+        }
+        
+        // Criar chave principal
+        const chavePrincipal = `${nomeKey}_${dataKey}_${obraKey}`;
+        
+        // Criar múltiplas chaves possíveis para garantir que encontre
+        const chavesPossiveis = [
+          chavePrincipal,
+          `${nomeKey}_${horario.data || ''}_${horario.obra || ''}`.toLowerCase().trim(),
+          `${nomeKey}_${dataKey}_${horario.obra || ''}`.toLowerCase().trim(),
+          `${nomeKey}_${horario.data || ''}_${obraKey}`,
+        ];
+        
+        chavesPossiveis.forEach(chave => {
+          if (!chave || chave.includes('undefined')) return;
+          
+          if (!profissionaisHorariosMap[chave]) {
+            profissionaisHorariosMap[chave] = {
+              entrada: horario.entrada || null,
+              saida: horario.saida || null,
+              horasTrabalhadas: horario.horasTrabalhadas || null,
+            };
+          } else {
+            // Usar o primeiro horário de entrada e último de saída
+            if (horario.entrada && (!profissionaisHorariosMap[chave].entrada || 
+                horario.entrada < profissionaisHorariosMap[chave].entrada)) {
+              profissionaisHorariosMap[chave].entrada = horario.entrada;
+            }
+            if (horario.saida && (!profissionaisHorariosMap[chave].saida || 
+                horario.saida > profissionaisHorariosMap[chave].saida)) {
+              profissionaisHorariosMap[chave].saida = horario.saida;
+            }
+            if (horario.horasTrabalhadas && !profissionaisHorariosMap[chave].horasTrabalhadas) {
+              profissionaisHorariosMap[chave].horasTrabalhadas = horario.horasTrabalhadas;
+            }
+          }
+        });
+      });
+      
+      // Debug: log do mapa de horários (apenas em desenvolvimento)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Mapa de horários criado:', Object.keys(profissionaisHorariosMap).length, 'entradas');
+      }
+      
+      // Processar serviços para criar os registros
+
+      // Agora processar os serviços para criar os registros
+      servicos.forEach(servico => {
+        if (!servico.profissionaisEnvolvidos) return;
+
+        // Parse dos profissionais envolvidos (formato: "Nome - Função / Nome2 - Função2")
+        const profissionaisStr = servico.profissionaisEnvolvidos;
+        const profissionaisList = profissionaisStr.split(' / ').map(p => p.trim()).filter(p => p);
+
+        profissionaisList.forEach(profStr => {
+          // Extrair nome e função (formato: "Nome - Função")
+          const partes = profStr.split(' - ');
+          const nome = partes[0]?.trim() || profStr.trim();
+          const funcao = partes[1]?.trim() || '';
+
+          if (!nome) return;
+
+          const nomeKey = nome.toLowerCase();
+          
+          // Inicializar profissional se não existir
+          if (!profissionaisRelatorio[nomeKey]) {
+            const profCadastrado = profissionaisMap.get(nomeKey);
+            profissionaisRelatorio[nomeKey] = {
+              nome: nome,
+              funcao: funcao || profCadastrado?.funcao || 'Não informada',
+              valorDiaria: profCadastrado?.valorDiaria || 0,
+              registros: [],
+            };
+          }
+
+          // Adicionar registro do dia
+          const dataKey = servico.data || 'Sem data';
+          let obraKey = servico.obra || 'Sem obra';
+          
+          // Converter obra ID para descrição se necessário
+          if (obrasMap.has(obraKey)) {
+            obraKey = obrasMap.get(obraKey) || obraKey;
+          }
+          
+          // Buscar registro existente para esta data e obra
+          let registro = profissionaisRelatorio[nomeKey].registros.find(r => 
+            r.data === dataKey && r.obra === obraKey
+          );
+
+          if (!registro) {
+            // Buscar horários do mapa - tentar múltiplas chaves possíveis
+            const dataNormalizada = normalizarData(dataKey);
+            const obraNormalizada = normalizarObra(obraKey);
+            
+            const chavesPossiveis = [
+              `${nomeKey}_${dataNormalizada}_${obraNormalizada}`,
+              `${nomeKey}_${dataKey}_${obraKey}`.toLowerCase().trim(),
+              `${nomeKey}_${dataNormalizada}_${obraKey}`.toLowerCase().trim(),
+              `${nomeKey}_${dataKey}_${obraNormalizada}`,
+            ];
+            
+            let horarios = {};
+            for (const chave of chavesPossiveis) {
+              if (profissionaisHorariosMap[chave]) {
+                horarios = profissionaisHorariosMap[chave];
+                break;
+              }
+            }
+            
+            // Se não encontrou por chave exata, buscar por nome e data (sem obra)
+            if (!horarios.entrada && !horarios.saida) {
+              const chaveSemObra = `${nomeKey}_${dataNormalizada}_`;
+              for (const chave in profissionaisHorariosMap) {
+                if (chave.startsWith(chaveSemObra)) {
+                  horarios = profissionaisHorariosMap[chave];
+                  break;
+                }
+              }
+            }
+            
+            // Se ainda não encontrou, buscar apenas por nome e data (qualquer obra)
+            if (!horarios.entrada && !horarios.saida) {
+              for (const chave in profissionaisHorariosMap) {
+                if (chave.startsWith(`${nomeKey}_${dataNormalizada}_`)) {
+                  horarios = profissionaisHorariosMap[chave];
+                  break;
+                }
+              }
+            }
+            
+            // Se ainda não encontrou, buscar apenas por nome (qualquer data/obra do mesmo profissional)
+            if (!horarios.entrada && !horarios.saida) {
+              for (const chave in profissionaisHorariosMap) {
+                if (chave.startsWith(`${nomeKey}_`)) {
+                  // Verificar se a data está próxima (mesmo dia)
+                  const partesChave = chave.split('_');
+                  if (partesChave.length >= 2) {
+                    const dataChave = partesChave[1];
+                    // Se a data normalizada corresponde, usar esses horários
+                    if (dataChave === dataNormalizada || dataChave === dataKey) {
+                      horarios = profissionaisHorariosMap[chave];
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+            
+            registro = {
+              data: dataKey,
+              obra: obraKey,
+              local: servico.local || 'Sem local',
+              servicos: [],
+              entrada: horarios.entrada || null,
+              saida: horarios.saida || null,
+              horasTrabalhadas: horarios.horasTrabalhadas || null,
+            };
+            profissionaisRelatorio[nomeKey].registros.push(registro);
+          }
+
+          // Adicionar serviço ao registro (evitar duplicatas)
+          const servicoJaExiste = registro.servicos.some(s => 
+            s.atividade === servico.atividade && 
+            s.percentualAvancado === servico.percentualAvancado
+          );
+          
+          if (!servicoJaExiste) {
+            registro.servicos.push({
+              atividade: servico.atividade || '',
+              percentualAvancado: servico.percentualAvancado || '',
+              observacoes: servico.observacoes || '',
+            });
+          }
+        });
+      });
+
+      // Converter para array e ordenar
+      let profissionais = Object.values(profissionaisRelatorio)
+        .map(prof => {
+          // Ordenar registros por data (mais recente primeiro)
+          prof.registros.sort((a, b) => {
+            try {
+              const dataA = new Date(a.data);
+              const dataB = new Date(b.data);
+              if (isNaN(dataA.getTime()) || isNaN(dataB.getTime())) return 0;
+              return dataB - dataA;
+            } catch {
+              return 0;
+            }
+          });
+
+          // Calcular totais
+          prof.totalDias = prof.registros.length;
+          prof.totalHoras = prof.registros.reduce((sum, reg) => {
+            if (reg.horasTrabalhadas) {
+              // Parse horas trabalhadas (formato: "8h30min")
+              const match = reg.horasTrabalhadas.match(/(\d+)h(\d+)min/);
+              if (match) {
+                return sum + parseInt(match[1]) + parseInt(match[2]) / 60;
+              }
+            } else if (reg.entrada && reg.saida) {
+              // Calcular horas trabalhadas a partir de entrada e saída
+              try {
+                const [hEntrada, mEntrada] = reg.entrada.split(':').map(Number);
+                const [hSaida, mSaida] = reg.saida.split(':').map(Number);
+                const minutosEntrada = hEntrada * 60 + mEntrada;
+                const minutosSaida = hSaida * 60 + mSaida;
+                const minutosTrabalhados = minutosSaida - minutosEntrada;
+                if (minutosTrabalhados > 0) {
+                  return sum + minutosTrabalhados / 60;
+                }
+              } catch (e) {
+                // Ignorar erros de parse
+              }
+            }
+            return sum;
+          }, 0);
+
+          return prof;
+        })
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+
+      // Aplicar filtro de profissional se fornecido
+      if (profissionalNome && profissionalNome.trim()) {
+        const nomeFiltro = profissionalNome.trim().toLowerCase();
+        profissionais = profissionais.filter(prof => 
+          prof.nome.toLowerCase() === nomeFiltro
+        );
+      }
+
+      return {
+        profissionais,
+        totalProfissionais: profissionais.length,
+        periodo: {
+          dataInicio: dataInicio || null,
+          dataFim: dataFim || null,
+        },
+      };
     } catch (error) {
       console.error('Erro ao gerar relatório de profissionais:', error);
-      return { profissionais: [], error: error.message };
+      throw error;
     }
   }
 

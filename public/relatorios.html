@@ -151,6 +151,9 @@
         <select id="obraFilter" class="input-field">
           <option value="">Todas as obras</option>
         </select>
+        <select id="profissionalFilter" class="input-field" style="display: none;">
+          <option value="">Todos os profissionais</option>
+        </select>
         <input type="date" id="dataInicio" class="input-field" placeholder="Data início">
         <input type="date" id="dataFim" class="input-field" placeholder="Data fim">
         <button type="button" class="btn-submit" onclick="carregarRelatorios()">
@@ -195,13 +198,20 @@
     </div>
 
     <div id="relatorioContent" class="form-section" style="display: none;">
-      <h2 id="relatorioTitle"></h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 id="relatorioTitle" style="margin: 0;"></h2>
+        <button type="button" id="exportarFolhaPontoBtn" class="btn-export-pdf" onclick="exportarFolhaPontoPDF()" style="display: none;">
+          <i data-lucide="download"></i>
+          <span>PDF</span>
+        </button>
+      </div>
       <div id="relatorioData"></div>
     </div>
 
     <div id="message" class="message"></div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="relatorios.js"></script>
   <script>
     lucide.createIcons();

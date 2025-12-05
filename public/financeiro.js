@@ -393,27 +393,27 @@ function renderizarResumoFinanceiro(dados) {
               </p>
             ` : ''}
           </div>
+          <div class="obra-resumo-totais">
+            <div class="total-item">
+              <span class="total-label">Valor Previsto:</span>
+              <span class="total-value">R$ ${obraData.valorPrevisto.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div class="total-item">
+              <span class="total-label">Total Compras:</span>
+              <span class="total-value" style="color: var(--ios-orange);">R$ ${obraData.totalCompras.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div class="total-item">
+              <span class="total-label">Total Pagamentos:</span>
+              <span class="total-value" style="color: var(--ios-blue);">R$ ${obraData.totalPagamentos.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div class="total-item total-saldo">
+              <span class="total-label">Saldo:</span>
+              <span class="total-value" style="color: ${saldoClass}; font-weight: 600;">R$ ${saldo.toFixed(2).replace('.', ',')}</span>
+            </div>
+          </div>
           <button type="button" class="btn-toggle-resumo" onclick="toggleResumoObra('${(obraData.obra + '|||' + obraData.local).replace(/'/g, "\\'")}')" aria-label="Expandir/Recolher">
             <i data-lucide="chevron-down" class="chevron-icon"></i>
           </button>
-        </div>
-        <div class="obra-resumo-totais">
-          <div class="total-item">
-            <span class="total-label">Valor Previsto:</span>
-            <span class="total-value">R$ ${obraData.valorPrevisto.toFixed(2).replace('.', ',')}</span>
-          </div>
-          <div class="total-item">
-            <span class="total-label">Total Compras:</span>
-            <span class="total-value" style="color: var(--ios-orange);">R$ ${obraData.totalCompras.toFixed(2).replace('.', ',')}</span>
-          </div>
-          <div class="total-item">
-            <span class="total-label">Total Pagamentos:</span>
-            <span class="total-value" style="color: var(--ios-blue);">R$ ${obraData.totalPagamentos.toFixed(2).replace('.', ',')}</span>
-          </div>
-          <div class="total-item total-saldo">
-            <span class="total-label">Saldo:</span>
-            <span class="total-value" style="color: ${saldoClass}; font-weight: 600;">R$ ${saldo.toFixed(2).replace('.', ',')}</span>
-          </div>
         </div>
         <div class="obra-resumo-detalhes" id="detalhes-${(obraData.obra + '|||' + obraData.local).replace(/[^a-zA-Z0-9|||]/g, '_')}" style="display: none;">
           ${obraData.compras.length > 0 ? `

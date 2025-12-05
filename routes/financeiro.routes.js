@@ -9,3 +9,5 @@ router.post('/pagamento', authMiddleware, registrarPagamento);
 
 export default router;
 
+
+

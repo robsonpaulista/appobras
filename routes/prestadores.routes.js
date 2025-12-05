@@ -13,3 +13,5 @@ router.delete('/:id', requireAuth, prestadoresController.deletar);
 export const prestadoresRoutes = router;
 
 
+
+

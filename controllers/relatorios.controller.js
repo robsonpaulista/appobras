@@ -20,12 +20,13 @@ class RelatoriosController {
 
   async profissionais(req, res) {
     try {
-      const { obraId, dataInicio, dataFim } = req.query;
+      const { obraId, dataInicio, dataFim, profissionalNome } = req.query;
 
       const relatorio = await googleSheetsService.gerarRelatorioProfissionais({
         obraId,
         dataInicio,
         dataFim,
+        profissionalNome,
       });
 
       res.json(relatorio);
@@ -70,6 +71,8 @@ class RelatoriosController {
 }
 
 export const relatoriosController = new RelatoriosController();
+
+
 
 
 

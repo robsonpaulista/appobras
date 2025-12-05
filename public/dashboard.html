@@ -146,34 +146,39 @@
     </header>
 
     <div class="form-section">
-      <h2>Filtros</h2>
-      <div class="ios-grouped-container">
-        <div class="form-field-group">
-          <label for="obraFilter" class="form-field-label">Obra</label>
-          <select id="obraFilter" class="input-field">
-            <option value="">Todas as obras</option>
-          </select>
+      <button type="button" class="form-section-toggle" id="filtrosToggle" aria-expanded="true">
+        <h2>Filtros</h2>
+        <i data-lucide="chevron-down" class="toggle-icon"></i>
+      </button>
+      <div class="form-section-content" id="filtrosContent">
+        <div class="ios-grouped-container">
+          <div class="form-field-group">
+            <label for="obraFilter" class="form-field-label">Obra</label>
+            <select id="obraFilter" class="input-field">
+              <option value="">Todas as obras</option>
+            </select>
+          </div>
+          <div class="form-field-group">
+            <label for="localFilter" class="form-field-label">Local</label>
+            <select id="localFilter" class="input-field">
+              <option value="">Todos os locais</option>
+            </select>
+          </div>
+          <div class="form-field-group">
+            <label for="dataInicio" class="form-field-label">Data Início</label>
+            <input type="date" id="dataInicio" class="input-field">
+          </div>
+          <div class="form-field-group">
+            <label for="dataFim" class="form-field-label">Data Fim</label>
+            <input type="date" id="dataFim" class="input-field">
+          </div>
         </div>
-        <div class="form-field-group">
-          <label for="localFilter" class="form-field-label">Local</label>
-          <select id="localFilter" class="input-field">
-            <option value="">Todos os locais</option>
-          </select>
+        <div style="margin-top: 16px;">
+          <button type="button" class="btn-submit" onclick="aplicarFiltros()">
+            <i data-lucide="filter"></i>
+            <span>Aplicar Filtros</span>
+          </button>
         </div>
-        <div class="form-field-group">
-          <label for="dataInicio" class="form-field-label">Data Início</label>
-          <input type="date" id="dataInicio" class="input-field">
-        </div>
-        <div class="form-field-group">
-          <label for="dataFim" class="form-field-label">Data Fim</label>
-          <input type="date" id="dataFim" class="input-field">
-        </div>
-      </div>
-      <div style="margin-top: 16px;">
-        <button type="button" class="btn-submit" onclick="aplicarFiltros()">
-          <i data-lucide="filter"></i>
-          <span>Aplicar Filtros</span>
-        </button>
       </div>
     </div>
 

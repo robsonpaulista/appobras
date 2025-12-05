@@ -76,6 +76,19 @@ export async function buscarDadosDashboard(req, res) {
         totalPagamentos: pagamentosObra.reduce((sum, p) => sum + parseFloat(p.valor || 0), 0),
         pendenciasAbertas: pendenciasObra.length,
         totalServicos: servicosObra.length,
+        compras: comprasObra.map(c => ({
+          valor: parseFloat(c.valor || 0),
+          descricao: c.descricao || 'Sem descrição',
+          data: c.data || '',
+          local: c.local || '',
+        })),
+        pagamentos: pagamentosObra.map(p => ({
+          valor: parseFloat(p.valor || 0),
+          descricao: p.descricao || 'Sem descrição',
+          data: p.data || '',
+          local: p.local || '',
+          prestador: p.prestador || '',
+        })),
       };
     });
     

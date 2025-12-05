@@ -17,6 +17,9 @@ async function inicializarDashboard() {
   // Configurar sidebar (deve ser chamado primeiro)
   configurarSidebar();
   
+  // Configurar toggle dos filtros
+  configurarToggleFiltros();
+  
   // Configurar filtros
   const obraFilter = document.getElementById('obraFilter');
   const localFilter = document.getElementById('localFilter');
@@ -160,15 +163,9 @@ function configurarSubmenuServicos() {
   const activeSubitem = servicosSubmenu.querySelector('.sidebar-nav-subitem.active');
   let shouldBeExpanded = false;
   
-  // Expandir apenas se houver item ativo ou se estiver salvo no localStorage
+  // Expandir apenas se houver item ativo (não usar localStorage para expandir automaticamente)
   if (activeSubitem) {
     shouldBeExpanded = true;
-  } else {
-    // Carregar estado salvo
-    const savedExpanded = localStorage.getItem('servicosSubmenuExpanded');
-    if (savedExpanded === 'true') {
-      shouldBeExpanded = true;
-    }
   }
   
   // Aplicar estado inicial
@@ -283,6 +280,42 @@ function atualizarNomeUsuarioSidebar() {
   if (sidebarUserName && currentUser) {
     sidebarUserName.textContent = currentUser.nome || currentUser.email || 'Usuário';
   }
+}
+
+function configurarToggleFiltros() {
+  const filtrosToggle = document.getElementById('filtrosToggle');
+  const filtrosContent = document.getElementById('filtrosContent');
+  
+  if (!filtrosToggle || !filtrosContent) {
+    return;
+  }
+  
+  // Carregar estado salvo do localStorage
+  const savedState = localStorage.getItem('filtrosExpanded');
+  const isExpanded = savedState !== 'false'; // Por padrão, expandido
+  
+  if (!isExpanded) {
+    filtrosToggle.setAttribute('aria-expanded', 'false');
+    filtrosContent.classList.add('collapsed');
+  } else {
+    filtrosToggle.setAttribute('aria-expanded', 'true');
+    filtrosContent.classList.remove('collapsed');
+  }
+  
+  filtrosToggle.addEventListener('click', () => {
+    const isCurrentlyExpanded = filtrosToggle.getAttribute('aria-expanded') === 'true';
+    const newState = !isCurrentlyExpanded;
+    
+    filtrosToggle.setAttribute('aria-expanded', newState);
+    
+    if (newState) {
+      filtrosContent.classList.remove('collapsed');
+    } else {
+      filtrosContent.classList.add('collapsed');
+    }
+    
+    localStorage.setItem('filtrosExpanded', newState);
+  });
 }
 
 async function verificarAutenticacao() {
@@ -408,6 +441,21 @@ function aplicarFiltros() {
   carregarDadosDashboard();
 }
 
+// Função para formatar valores em R$ com ponto para milhar
+function formatarMoeda(valor) {
+  if (valor === null || valor === undefined || isNaN(valor)) {
+    return 'R$ 0,00';
+  }
+  
+  const valorNumero = parseFloat(valor);
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(valorNumero);
+}
+
 function renderizarObras() {
   const container = document.getElementById('obrasDashboard');
   const obras = dadosDashboard.obras || [];
@@ -417,10 +465,12 @@ function renderizarObras() {
     return;
   }
   
-  container.innerHTML = obras.map(obra => {
+  container.innerHTML = obras.map((obra, index) => {
     const saldo = obra.valorPrevisto - obra.totalCompras - obra.totalPagamentos;
     const saldoClass = saldo >= 0 ? 'var(--ios-green)' : 'var(--ios-red)';
     const percentualGasto = obra.valorPrevisto > 0 ? ((obra.totalCompras + obra.totalPagamentos) / obra.valorPrevisto * 100) : 0;
+    const obraId = `obra-${index}`;
+    const totalGasto = obra.totalCompras + obra.totalPagamentos;
     
     return `
       <div class="dashboard-obra-card">
@@ -445,20 +495,73 @@ function renderizarObras() {
         <div class="dashboard-obra-stats">
           <div class="dashboard-obra-stat">
             <span class="stat-label-small">Valor Previsto</span>
-            <span class="stat-value-small">R$ ${(obra.valorPrevisto || 0).toFixed(2).replace('.', ',')}</span>
+            <span class="stat-value-small">${formatarMoeda(obra.valorPrevisto)}</span>
           </div>
           <div class="dashboard-obra-stat">
             <span class="stat-label-small">Total Gasto</span>
-            <span class="stat-value-small" style="color: var(--ios-orange);">
-              R$ ${(obra.totalCompras + obra.totalPagamentos).toFixed(2).replace('.', ',')}
-            </span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="stat-value-small" style="color: var(--ios-orange);">
+                ${formatarMoeda(totalGasto)}
+              </span>
+              ${totalGasto > 0 ? `
+                <button type="button" class="btn-expand-gastos" onclick="toggleDetalhesGastos('${obraId}')" aria-label="Expandir detalhes dos gastos">
+                  <i data-lucide="chevron-down" class="expand-icon" id="icon-${obraId}"></i>
+                </button>
+              ` : ''}
+            </div>
           </div>
           <div class="dashboard-obra-stat">
             <span class="stat-label-small">Saldo</span>
             <span class="stat-value-small" style="color: ${saldoClass}; font-weight: 600;">
-              R$ ${saldo.toFixed(2).replace('.', ',')}
+              ${formatarMoeda(saldo)}
             </span>
           </div>
+        </div>
+        
+        <div class="dashboard-gastos-detalhes" id="detalhes-${obraId}" style="display: none;">
+          ${obra.compras && obra.compras.length > 0 ? `
+            <div class="gastos-categoria">
+              <h4 class="gastos-categoria-title">
+                <i data-lucide="shopping-cart" class="info-icon"></i>
+                Compras (${obra.compras.length})
+                <span class="gastos-total">${formatarMoeda(obra.totalCompras)}</span>
+              </h4>
+              <div class="gastos-lista">
+                ${obra.compras.map(compra => `
+                  <div class="gasto-item">
+                    <div class="gasto-item-info">
+                      <span class="gasto-descricao">${compra.descricao || 'Sem descrição'}</span>
+                      ${compra.local ? `<span class="gasto-local">${compra.local}</span>` : ''}
+                      ${compra.data ? `<span class="gasto-data">${formatarData(compra.data)}</span>` : ''}
+                    </div>
+                    <span class="gasto-valor">${formatarMoeda(compra.valor)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          ${obra.pagamentos && obra.pagamentos.length > 0 ? `
+            <div class="gastos-categoria">
+              <h4 class="gastos-categoria-title">
+                <i data-lucide="dollar-sign" class="info-icon"></i>
+                Pagamentos (${obra.pagamentos.length})
+                <span class="gastos-total">${formatarMoeda(obra.totalPagamentos)}</span>
+              </h4>
+              <div class="gastos-lista">
+                ${obra.pagamentos.map(pagamento => `
+                  <div class="gasto-item">
+                    <div class="gasto-item-info">
+                      <span class="gasto-descricao">${pagamento.descricao || 'Sem descrição'}</span>
+                      ${pagamento.prestador ? `<span class="gasto-prestador">${pagamento.prestador}</span>` : ''}
+                      ${pagamento.local ? `<span class="gasto-local">${pagamento.local}</span>` : ''}
+                      ${pagamento.data ? `<span class="gasto-data">${formatarData(pagamento.data)}</span>` : ''}
+                    </div>
+                    <span class="gasto-valor">${formatarMoeda(pagamento.valor)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
         </div>
         
         <div class="dashboard-obra-progress">
@@ -467,18 +570,18 @@ function renderizarObras() {
             <span>${percentualGasto.toFixed(1)}%</span>
           </div>
           <div class="progress-bar">
-            <div class="progress-fill" style="width: ${Math.min(percentualGasto, 100)}%; background: ${percentualGasto > 80 ? 'var(--ios-red)' : percentualGasto > 60 ? 'var(--ios-orange)' : 'var(--ios-green)'};"></div>
+            <div class="progress-fill" style="width: ${Math.min(percentualGasto, 100)}%; background: var(--primary-gradient);"></div>
           </div>
         </div>
         
         <div class="dashboard-obra-details">
           <div class="dashboard-obra-detail-item">
             <i data-lucide="shopping-cart" class="info-icon"></i>
-            <span>${obra.totalCompras || 0} compras</span>
+            <span>${obra.compras?.length || 0} compras</span>
           </div>
           <div class="dashboard-obra-detail-item">
             <i data-lucide="dollar-sign" class="info-icon"></i>
-            <span>${obra.totalPagamentos || 0} pagamentos</span>
+            <span>${obra.pagamentos?.length || 0} pagamentos</span>
           </div>
           <div class="dashboard-obra-detail-item">
             <i data-lucide="alert-circle" class="info-icon"></i>
@@ -495,6 +598,52 @@ function renderizarObras() {
   
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
+  }
+}
+
+function toggleDetalhesGastos(obraId) {
+  const detalhes = document.getElementById(`detalhes-${obraId}`);
+  const icon = document.getElementById(`icon-${obraId}`);
+  
+  if (!detalhes || !icon) return;
+  
+  const isExpanded = detalhes.style.display !== 'none';
+  
+  if (isExpanded) {
+    detalhes.style.display = 'none';
+    icon.setAttribute('data-lucide', 'chevron-down');
+  } else {
+    detalhes.style.display = 'block';
+    icon.setAttribute('data-lucide', 'chevron-up');
+  }
+  
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+}
+
+function formatarData(dataStr) {
+  if (!dataStr) return '';
+  
+  try {
+    // Se já está no formato YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
+      const [ano, mes, dia] = dataStr.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+    
+    // Tentar parse direto
+    const data = new Date(dataStr);
+    if (!isNaN(data.getTime())) {
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
+    
+    return dataStr;
+  } catch {
+    return dataStr;
   }
 }
 

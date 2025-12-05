@@ -8,3 +8,5 @@ router.get('/', requireAuth, buscarDadosDashboard);
 
 export const dashboardRoutes = router;
 
+
+
