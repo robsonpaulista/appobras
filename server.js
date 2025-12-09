@@ -136,7 +136,14 @@ app.use(session({
   // Em produção, usar store adequado (Redis, etc)
   // Por enquanto, usar memória (não recomendado para múltiplas instâncias)
 }));
-app.use(express.static(join(__dirname, 'public')));
+
+// Servir arquivos estáticos ANTES de qualquer rota
+// Isso garante que CSS, JS e outros assets sejam servidos corretamente
+app.use(express.static(join(__dirname, 'public'), {
+  maxAge: '1y',
+  etag: true,
+  lastModified: true,
+}));
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
 
 // Rotas da API (devem vir antes das rotas de páginas)
