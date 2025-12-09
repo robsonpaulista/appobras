@@ -31,6 +31,13 @@ class AuthController {
       req.session.userName = usuario.nome;
       req.session.isAdmin = usuario.isAdmin === 'true' || usuario.isAdmin === true;
 
+      // Salvar sessão explicitamente
+      req.session.save((err) => {
+        if (err) {
+          console.error('Erro ao salvar sessão:', err);
+        }
+      });
+
       res.json({
         success: true,
         user: {

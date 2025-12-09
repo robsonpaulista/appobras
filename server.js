@@ -24,6 +24,13 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+
+// Configurar trust proxy para Vercel
+// O Vercel funciona como proxy reverso, então precisamos confiar nele
+if (isVercel || isProduction) {
+  app.set('trust proxy', 1); // Confiar no primeiro proxy (Vercel)
+}
 
 // Validar SESSION_SECRET em produção (mas não bloquear inicialização no Vercel)
 if (isProduction && !process.env.SESSION_SECRET) {
@@ -69,6 +76,14 @@ app.use(cors({
     // Em desenvolvimento, permitir localhost
     if (!isProduction && origin.includes('localhost')) {
       return callback(null, true);
+    }
+    
+    // No Vercel, permitir o próprio domínio automaticamente
+    if (isVercel) {
+      // Permitir qualquer origem do Vercel
+      if (origin.includes('vercel.app')) {
+        return callback(null, true);
+      }
     }
     
     // Em produção, verificar lista de origens permitidas
@@ -127,11 +142,12 @@ app.use(session({
   saveUninitialized: false,
   name: 'sessionId', // Não usar nome padrão
   cookie: {
-    secure: isProduction ? true : false, // HTTPS apenas em produção
+    secure: isProduction || isVercel ? true : false, // HTTPS apenas em produção/Vercel
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 horas
-    sameSite: isProduction ? 'strict' : 'lax', // Proteção CSRF
-    domain: process.env.COOKIE_DOMAIN || undefined,
+    sameSite: isProduction || isVercel ? 'lax' : 'lax', // 'lax' funciona melhor com proxies
+    // Não definir domain no Vercel para funcionar em todos os subdomínios
+    domain: (isVercel ? undefined : process.env.COOKIE_DOMAIN) || undefined,
   },
   // Em produção, usar store adequado (Redis, etc)
   // Por enquanto, usar memória (não recomendado para múltiplas instâncias)
