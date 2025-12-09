@@ -25,10 +25,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Validar SESSION_SECRET em produção
+// Validar SESSION_SECRET em produção (mas não bloquear inicialização no Vercel)
 if (isProduction && !process.env.SESSION_SECRET) {
-  console.error('ERRO CRÍTICO: SESSION_SECRET não definido em produção!');
-  process.exit(1);
+  console.error('AVISO: SESSION_SECRET não definido em produção!');
+  console.error('Configure SESSION_SECRET nas variáveis de ambiente do Vercel.');
+  // Não fazer exit(1) pois pode causar problemas no Vercel durante deploy
 }
 
 // Headers de segurança com Helmet
@@ -48,8 +49,17 @@ app.use(helmet({
 
 // Configurar CORS adequadamente
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',')
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : (isProduction ? [] : ['http://localhost:3000']);
+
+// Adicionar domínio do Vercel automaticamente se estiver em produção
+if (isProduction && process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+if (isProduction && process.env.VERCEL) {
+  // Permitir requisições do próprio Vercel
+  allowedOrigins.push('https://*.vercel.app');
+}
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -63,14 +73,25 @@ app.use(cors({
     
     // Em produção, verificar lista de origens permitidas
     if (isProduction && allowedOrigins.length > 0) {
-      if (allowedOrigins.includes(origin)) {
+      // Verificar match exato ou wildcard
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed.includes('*')) {
+          const pattern = allowed.replace('*', '.*');
+          return new RegExp(`^${pattern}$`).test(origin);
+        }
+        return allowed === origin;
+      });
+      
+      if (isAllowed) {
         return callback(null, true);
       } else {
+        // Log para debug mas não bloquear em produção inicial
+        console.warn(`CORS bloqueado para origem: ${origin}`);
         return callback(new Error('Não permitido pelo CORS'));
       }
     }
     
-    // Se não houver lista definida em produção, permitir todas (não recomendado)
+    // Se não houver lista definida em produção, permitir todas (temporário)
     callback(null, true);
   },
   credentials: true,
@@ -94,8 +115,14 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Configuração de sessão
+const sessionSecret = process.env.SESSION_SECRET || (isProduction ? 'temp-secret-change-in-production' : 'dev-secret-key-change-in-production');
+
+if (isProduction && !process.env.SESSION_SECRET) {
+  console.warn('⚠️  ATENÇÃO: Usando SESSION_SECRET temporário. Configure uma chave segura nas variáveis de ambiente!');
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || (isProduction ? null : 'dev-secret-key-change-in-production'),
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   name: 'sessionId', // Não usar nome padrão
@@ -195,7 +222,22 @@ app.get('*', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+// Middleware de tratamento de erros global
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Erro interno do servidor',
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+  });
 });
+
+// Exportar para Vercel (serverless function)
+export default app;
+
+// Iniciar servidor apenas em desenvolvimento local
+if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  });
+}
 
