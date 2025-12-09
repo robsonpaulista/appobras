@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro de Locais - Diário de Obra Digital</title>
+  <title>Gerenciamento de Usuários - Dynamics Obras</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -26,7 +26,7 @@
         <span class="sidebar-nav-text">Dashboard</span>
       </a>
       <div class="sidebar-nav-group">
-        <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="cadastrosToggle" aria-expanded="false" title="Cadastros">
+        <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="cadastrosToggle" aria-expanded="true" title="Cadastros">
           <div class="sidebar-nav-icon">
             <i data-lucide="folder"></i>
           </div>
@@ -42,7 +42,7 @@
             </div>
             <span class="sidebar-nav-text">Prestadores</span>
           </a>
-          <a href="/locais.html" class="sidebar-nav-item sidebar-nav-subitem active" title="Locais">
+          <a href="/locais.html" class="sidebar-nav-item sidebar-nav-subitem" title="Locais">
             <div class="sidebar-nav-icon">
               <i data-lucide="map-pin"></i>
             </div>
@@ -54,7 +54,7 @@
             </div>
             <span class="sidebar-nav-text">Obras</span>
           </a>
-          <a href="/usuarios.html" class="sidebar-nav-item sidebar-nav-subitem" title="Usuários">
+          <a href="/usuarios.html" class="sidebar-nav-item sidebar-nav-subitem active" title="Usuários">
             <div class="sidebar-nav-icon">
               <i data-lucide="users"></i>
             </div>
@@ -142,50 +142,72 @@
           </button>
           <div>
             <h1>
-              <i data-lucide="map-pin" class="header-icon"></i>
-              Cadastro de Locais
+              <i data-lucide="users" class="header-icon"></i>
+              Gerenciamento de Usuários
             </h1>
-            <p class="subtitle">Gerencie os locais da obra</p>
+            <p class="subtitle">Gerencie os usuários do sistema</p>
           </div>
         </div>
       </div>
     </header>
 
     <div class="form-section">
-      <h2>Criar Novo Local</h2>
-      <form id="localForm">
+      <h2>Criar Novo Usuário</h2>
+      <form id="usuarioForm">
         <div class="ios-grouped-container">
           <div class="form-field-group">
-            <label for="nomeLocal" class="form-field-label">Nome</label>
+            <label for="nomeUsuario" class="form-field-label">Nome Completo</label>
             <input 
               type="text" 
-              id="nomeLocal" 
-              placeholder="Digite o nome do local" 
+              id="nomeUsuario" 
+              placeholder="Digite o nome completo" 
               class="input-field" 
               name="nome"
+              required
             >
           </div>
           <div class="form-field-group">
-            <label for="descricaoLocal" class="form-field-label">Descrição</label>
-            <textarea 
-              id="descricaoLocal" 
-              placeholder="Descrição (opcional)" 
-              class="input-field textarea-field"
-              name="descricao"
-            ></textarea>
+            <label for="emailUsuario" class="form-field-label">Email</label>
+            <input 
+              type="email" 
+              id="emailUsuario" 
+              placeholder="usuario@exemplo.com" 
+              class="input-field" 
+              name="email"
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="senhaUsuario" class="form-field-label">Senha</label>
+            <input 
+              type="password" 
+              id="senhaUsuario" 
+              placeholder="Mínimo 4 caracteres" 
+              class="input-field" 
+              name="senha"
+              minlength="4"
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="isAdminUsuario" class="form-field-label">Tipo de Usuário</label>
+            <select id="isAdminUsuario" class="input-field" name="isAdmin">
+              <option value="false">Usuário Comum</option>
+              <option value="true">Administrador</option>
+            </select>
           </div>
         </div>
         <button type="submit" class="btn-submit">
-          <i data-lucide="plus"></i>
-          <span>Criar Local</span>
+          <i data-lucide="user-plus"></i>
+          <span>Criar Usuário</span>
         </button>
       </form>
     </div>
 
     <div class="form-section">
-      <h2>Locais Cadastrados</h2>
-      <div id="locaisList" class="locais-list">
-        <p class="loading">Carregando locais...</p>
+      <h2>Usuários Cadastrados</h2>
+      <div id="usuariosList" class="locais-list">
+        <p class="loading">Carregando usuários...</p>
       </div>
     </div>
 
@@ -196,31 +218,50 @@
   <div id="editModal" class="modal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Editar Local</h2>
+        <h2>Editar Usuário</h2>
         <button type="button" class="modal-close" onclick="fecharModalEdicao()" aria-label="Fechar">
           <i data-lucide="x"></i>
         </button>
       </div>
-      <form id="editLocalForm">
-        <input type="hidden" id="editLocalId">
+      <form id="editUsuarioForm">
+        <input type="hidden" id="editUsuarioId">
         <div class="ios-grouped-container">
           <div class="form-field-group">
-            <label for="editNomeLocal" class="form-field-label">Nome</label>
+            <label for="editNomeUsuario" class="form-field-label">Nome Completo</label>
             <input 
               type="text" 
-              id="editNomeLocal" 
-              placeholder="Digite o nome do local" 
+              id="editNomeUsuario" 
+              placeholder="Digite o nome completo" 
               class="input-field" 
               required
             >
           </div>
           <div class="form-field-group">
-            <label for="editDescricaoLocal" class="form-field-label">Descrição</label>
-            <textarea 
-              id="editDescricaoLocal" 
-              placeholder="Descrição (opcional)" 
-              class="input-field textarea-field"
-            ></textarea>
+            <label for="editEmailUsuario" class="form-field-label">Email</label>
+            <input 
+              type="email" 
+              id="editEmailUsuario" 
+              placeholder="usuario@exemplo.com" 
+              class="input-field"
+              required
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="editSenhaUsuario" class="form-field-label">Nova Senha (deixe em branco para manter a atual)</label>
+            <input 
+              type="password" 
+              id="editSenhaUsuario" 
+              placeholder="Mínimo 4 caracteres" 
+              class="input-field"
+              minlength="4"
+            >
+          </div>
+          <div class="form-field-group">
+            <label for="editIsAdminUsuario" class="form-field-label">Tipo de Usuário</label>
+            <select id="editIsAdminUsuario" class="input-field">
+              <option value="false">Usuário Comum</option>
+              <option value="true">Administrador</option>
+            </select>
           </div>
         </div>
         <div class="modal-footer">
@@ -237,7 +278,7 @@
     </div>
   </div>
 
-  <script src="locais.js"></script>
+  <script src="usuarios.js"></script>
   <script>
     lucide.createIcons();
   </script>

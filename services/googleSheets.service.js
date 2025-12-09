@@ -584,14 +584,26 @@ class GoogleSheetsService {
 
       if (!response.data.values) return [];
 
-      return response.data.values.map((row, index) => ({
-        id: row[0] || `user_${index + 2}`,
-        nome: row[1] || '',
-        email: row[2] || '',
-        senhaHash: row[3] || '',
-        isAdmin: row[4] || 'false',
-        dataCriacao: row[5] || '',
-      }));
+      return response.data.values.map((row, index) => {
+        const isAdminRaw = row[4];
+        // Normalizar isAdmin: aceitar 'true', 'TRUE', 'True', true, '1', 1, ou qualquer valor truthy
+        let isAdmin = 'false';
+        if (isAdminRaw) {
+          const isAdminStr = String(isAdminRaw).trim().toLowerCase();
+          if (isAdminStr === 'true' || isAdminStr === '1' || isAdminRaw === true || isAdminRaw === 1) {
+            isAdmin = 'true';
+          }
+        }
+        
+        return {
+          id: row[0] || `user_${index + 2}`,
+          nome: row[1] || '',
+          email: row[2] || '',
+          senhaHash: row[3] || '',
+          isAdmin: isAdmin,
+          dataCriacao: row[5] || '',
+        };
+      });
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
       return [];
@@ -622,6 +634,126 @@ class GoogleSheetsService {
     });
 
     return { id, ...usuario };
+  }
+
+  async atualizarUsuario(id, usuario) {
+    if (!this.sheets || !this.spreadsheetId) {
+      throw new Error('Google Sheets não inicializado');
+    }
+
+    try {
+      const usuarios = await this.buscarUsuarios();
+      const usuarioIndex = usuarios.findIndex(u => u.id === id);
+
+      if (usuarioIndex === -1) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      // Buscar linha na planilha
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: this.spreadsheetId,
+        range: 'Usuarios!A:F',
+      });
+
+      const rows = response.data.values || [];
+      const rowIndex = rows.findIndex((row, idx) => idx > 0 && row[0] === id);
+
+      if (rowIndex === -1) {
+        throw new Error('Usuário não encontrado na planilha');
+      }
+
+      const rowNumber = rowIndex + 1;
+      const row = rows[rowIndex];
+      
+      // Se senha foi fornecida, fazer hash. Caso contrário, manter a atual
+      let senhaHash = row[3] || '';
+      if (usuario.senha && usuario.senha.trim()) {
+        const bcrypt = (await import('bcryptjs')).default;
+        senhaHash = await bcrypt.hash(usuario.senha, 10);
+      }
+
+      const values = [[
+        id,
+        usuario.nome !== undefined ? usuario.nome : (row[1] || ''),
+        usuario.email !== undefined ? usuario.email : (row[2] || ''),
+        senhaHash,
+        usuario.isAdmin !== undefined ? (usuario.isAdmin ? 'true' : 'false') : (row[4] || 'false'),
+        row[5] || new Date().toISOString(), // Manter data de criação original
+      ]];
+
+      await this.sheets.spreadsheets.values.update({
+        spreadsheetId: this.spreadsheetId,
+        range: `Usuarios!A${rowNumber}:F${rowNumber}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values },
+      });
+
+      return {
+        id,
+        nome: values[0][1],
+        email: values[0][2],
+        isAdmin: values[0][4] === 'true',
+        dataCriacao: values[0][5],
+      };
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      throw error;
+    }
+  }
+
+  async deletarUsuario(id) {
+    if (!this.sheets || !this.spreadsheetId) {
+      throw new Error('Google Sheets não inicializado');
+    }
+
+    try {
+      // Buscar informações da planilha para obter sheetId
+      const spreadsheetResponse = await this.sheets.spreadsheets.get({
+        spreadsheetId: this.spreadsheetId,
+      });
+
+      const sheet = spreadsheetResponse.data.sheets.find(s => s.properties.title === 'Usuarios');
+      if (!sheet) {
+        throw new Error('Aba Usuarios não encontrada');
+      }
+
+      const sheetId = sheet.properties.sheetId;
+
+      // Buscar linha do usuário
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: this.spreadsheetId,
+        range: 'Usuarios!A:F',
+      });
+
+      const rows = response.data.values || [];
+      const rowIndex = rows.findIndex((row, idx) => idx > 0 && row[0] === id);
+
+      if (rowIndex === -1) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      // Deletar a linha completamente
+      await this.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: this.spreadsheetId,
+        requestBody: {
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: sheetId,
+                dimension: 'ROWS',
+                startIndex: rowIndex,
+                endIndex: rowIndex + 1,
+              },
+            },
+          }],
+        },
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao deletar usuário:', error);
+      throw error;
+    }
   }
 
   // Métodos para Obras

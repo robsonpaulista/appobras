@@ -13,6 +13,7 @@ import { prestadoresRoutes } from './routes/prestadores.routes.js';
 import comprasRoutes from './routes/compras.routes.js';
 import financeiroRoutes from './routes/financeiro.routes.js';
 import { relatoriosRoutes } from './routes/relatorios.routes.js';
+import { usuariosRoutes } from './routes/usuarios.routes.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -173,6 +174,7 @@ app.use('/api/prestadores', prestadoresRoutes);
 app.use('/api/compras', comprasRoutes);
 app.use('/api/financeiro', financeiroRoutes);
 app.use('/api/relatorios', relatoriosRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 
 // Debug: Log de rotas registradas
 console.log('Rotas da API registradas:');
@@ -211,6 +213,10 @@ app.get('/obras.html', (req, res) => {
 
 app.get('/prestadores.html', (req, res) => {
   res.sendFile(join(__dirname, 'public', 'prestadores.html'));
+});
+
+app.get('/usuarios.html', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'usuarios.html'));
 });
 
 app.get('/relatorios.html', (req, res) => {

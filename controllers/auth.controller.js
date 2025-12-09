@@ -65,15 +65,37 @@ class AuthController {
   async getCurrentUser(req, res) {
     if (req.session && req.session.userId) {
       try {
+        // Sempre buscar do Google Sheets para garantir dados atualizados
         const usuarios = await googleSheetsService.buscarUsuarios();
         const usuario = usuarios.find(u => u.id === req.session.userId);
 
         if (usuario) {
+          // Determinar se é admin (aceitar 'true', 'TRUE', 'True', true, '1', 1)
+          const isAdminStr = String(usuario.isAdmin || '').trim().toLowerCase();
+          const isAdminValue = isAdminStr === 'true' || usuario.isAdmin === true || isAdminStr === '1' || usuario.isAdmin === 1;
+          
+          // Atualizar sessão com dados do usuário
+          req.session.userName = usuario.nome;
+          req.session.userEmail = usuario.email;
+          req.session.isAdmin = isAdminValue;
+
+          // Debug em desenvolvimento
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('📋 getCurrentUser - Usuário encontrado:', {
+              id: usuario.id,
+              nome: usuario.nome,
+              email: usuario.email,
+              isAdminRaw: usuario.isAdmin,
+              isAdminType: typeof usuario.isAdmin,
+              isAdminCalculated: isAdminValue,
+            });
+          }
+
           return res.json({
             id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
-            isAdmin: usuario.isAdmin === 'true' || usuario.isAdmin === true,
+            isAdmin: isAdminValue,
           });
         }
       } catch (error) {
