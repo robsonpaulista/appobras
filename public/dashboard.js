@@ -491,7 +491,7 @@ function renderizarObras() {
             ` : ''}
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
-            <button type="button" class="btn-export-obra-pdf" onclick="exportarObraPDF(${index})" aria-label="Exportar obra em PDF" title="Exportar em PDF">
+            <button type="button" class="btn-export-obra-pdf" data-action="export-pdf" data-index="${index}" aria-label="Exportar obra em PDF" title="Exportar em PDF">
               <i data-lucide="download"></i>
             </button>
             <div class="dashboard-obra-status ${obra.ativo ? 'ativo' : 'inativo'}">
@@ -512,7 +512,7 @@ function renderizarObras() {
                 ${formatarMoeda(totalGasto)}
               </span>
               ${totalGasto > 0 ? `
-                <button type="button" class="btn-expand-gastos" onclick="toggleDetalhesGastos('${obraId}')" aria-label="Expandir detalhes dos gastos">
+                <button type="button" class="btn-expand-gastos" data-action="toggle-gastos" data-obra-id="${obraId}" aria-label="Expandir detalhes dos gastos">
                   <i data-lucide="chevron-down" class="expand-icon" id="icon-${obraId}"></i>
                 </button>
               ` : ''}
@@ -603,6 +603,22 @@ function renderizarObras() {
       </div>
     `;
   }).join('');
+  
+  // Adicionar event listeners usando delegação de eventos
+  container.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-action]');
+    if (!button) return;
+    
+    const action = button.getAttribute('data-action');
+    
+    if (action === 'export-pdf') {
+      const index = parseInt(button.getAttribute('data-index'));
+      exportarObraPDF(index);
+    } else if (action === 'toggle-gastos') {
+      const obraId = button.getAttribute('data-obra-id');
+      toggleDetalhesGastos(obraId);
+    }
+  });
   
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
