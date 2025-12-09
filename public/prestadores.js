@@ -263,15 +263,30 @@ function exibirPrestadores(prestadores) {
         </div>
       </div>
       <div class="compra-actions">
-        <button type="button" class="btn-edit" onclick="editarPrestador('${prestador.id}')" aria-label="Editar prestador" title="Editar">
+        <button type="button" class="btn-edit" data-action="edit" data-id="${prestador.id}" aria-label="Editar prestador" title="Editar">
           <i data-lucide="edit-2"></i>
         </button>
-        <button type="button" class="btn-remove" onclick="deletarPrestador('${prestador.id}')" aria-label="Deletar prestador" title="Excluir">
+        <button type="button" class="btn-remove" data-action="delete" data-id="${prestador.id}" aria-label="Deletar prestador" title="Excluir">
           <i data-lucide="trash-2"></i>
         </button>
       </div>
     </div>
   `).join('');
+
+  // Adicionar event listeners usando delegação de eventos
+  listContainer.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-action]');
+    if (!button) return;
+    
+    const action = button.getAttribute('data-action');
+    const id = button.getAttribute('data-id');
+    
+    if (action === 'edit' && id) {
+      editarPrestador(id);
+    } else if (action === 'delete' && id) {
+      deletarPrestador(id);
+    }
+  });
 
   // Inicializar ícones
   if (typeof lucide !== 'undefined') {

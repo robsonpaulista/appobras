@@ -9,6 +9,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('obraForm').addEventListener('submit', criarObra);
   document.getElementById('editObraForm').addEventListener('submit', atualizarObra);
   
+  // Configurar botões do modal
+  const closeEditModal = document.getElementById('closeEditModal');
+  const cancelEditModal = document.getElementById('cancelEditModal');
+  if (closeEditModal) {
+    closeEditModal.addEventListener('click', fecharModalEdicao);
+  }
+  if (cancelEditModal) {
+    cancelEditModal.addEventListener('click', fecharModalEdicao);
+  }
+  
   // Configurar sidebar
   configurarSidebar();
   
@@ -313,15 +323,30 @@ function exibirObras(obras) {
         </div>
       </div>
       <div class="compra-actions">
-        <button type="button" class="btn-edit" onclick="editarObra('${obra.id}')" aria-label="Editar obra" title="Editar">
+        <button type="button" class="btn-edit" data-action="edit" data-id="${obra.id}" aria-label="Editar obra" title="Editar">
           <i data-lucide="edit-2"></i>
         </button>
-        <button type="button" class="btn-remove" onclick="deletarObra('${obra.id}')" aria-label="Deletar obra" title="Excluir">
+        <button type="button" class="btn-remove" data-action="delete" data-id="${obra.id}" aria-label="Deletar obra" title="Excluir">
           <i data-lucide="trash-2"></i>
         </button>
       </div>
     </div>
   `).join('');
+  
+  // Adicionar event listeners usando delegação de eventos
+  container.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-action]');
+    if (!button) return;
+    
+    const action = button.getAttribute('data-action');
+    const id = button.getAttribute('data-id');
+    
+    if (action === 'edit' && id) {
+      editarObra(id);
+    } else if (action === 'delete' && id) {
+      deletarObra(id);
+    }
+  });
   
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
