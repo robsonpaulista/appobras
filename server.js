@@ -45,10 +45,11 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
+      scriptSrcAttr: ["'unsafe-inline'"], // Permitir event handlers inline (onclick, etc)
       imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "https://unpkg.com"],
-      connectSrc: ["'self'", "https://unpkg.com"], // Permitir unpkg.com para source maps
+      fontSrc: ["'self'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
+      connectSrc: ["'self'", "https://unpkg.com", "https://cdnjs.cloudflare.com"], // Permitir unpkg.com e cdnjs para source maps
     },
   },
   crossOriginEmbedderPolicy: false, // Necessário para alguns recursos
