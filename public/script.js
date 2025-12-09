@@ -5,8 +5,6 @@ let prestadoresCadastrados = [];
 let currentUser = null;
 let watchId = null; // Para GPS
 
-console.log('Script.js carregado - funções de pendências disponíveis');
-
 // Formatar data para pendências
 function formatarDataPendencia(data) {
   if (!data) return 'Sem data';
@@ -26,19 +24,14 @@ function formatarDataPendencia(data) {
 
 // Carregar pendências registradas
 async function carregarPendenciasRegistradas() {
-  console.log('=== carregarPendenciasRegistradas chamada ===');
   const container = document.getElementById('pendenciasRegistradas');
   if (!container) {
-    console.error('Container pendenciasRegistradas não encontrado!');
     return;
   }
-  console.log('Container encontrado:', container);
 
   const obraId = document.getElementById('obraId')?.value || '';
   const localId = document.getElementById('localId')?.value || '';
   const data = document.getElementById('data')?.value || '';
-
-  console.log('Carregando pendências:', { obraId, localId, data });
 
   // Não carregar se não tiver obra e local selecionados
   if (!obraId || !localId) {
@@ -55,7 +48,6 @@ async function carregarPendenciasRegistradas() {
     if (data) params.append('data', data);
 
     const url = `/api/diario/pendencias-registradas?${params.toString()}`;
-    console.log('Buscando pendências em:', url);
 
     const response = await fetch(url, {
       credentials: 'include',
@@ -68,8 +60,6 @@ async function carregarPendenciasRegistradas() {
     }
 
     const pendencias = await response.json();
-    console.log('Pendências recebidas:', pendencias);
-    console.log(`Total de pendências recebidas: ${pendencias.length}`);
 
     if (!Array.isArray(pendencias)) {
       console.error('Resposta inválida da API:', pendencias);
@@ -184,35 +174,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   const obraSelect = document.getElementById('obraId');
   const localSelect = document.getElementById('localId');
   
-  console.log('Configurando listeners para pendências:', { 
-    obraSelect: !!obraSelect, 
-    localSelect: !!localSelect, 
-    dataInput: !!dataInput,
-    funcaoDefinida: typeof carregarPendenciasRegistradas === 'function'
-  });
-  
   if (obraSelect) {
     obraSelect.addEventListener('change', () => {
-      console.log('Obra mudou, carregando pendências...');
       carregarPendenciasRegistradas();
     });
   }
   if (localSelect) {
     localSelect.addEventListener('change', () => {
-      console.log('Local mudou, carregando pendências...');
       carregarPendenciasRegistradas();
     });
   }
   if (dataInput) {
     dataInput.addEventListener('change', () => {
-      console.log('Data mudou, carregando pendências...');
       carregarPendenciasRegistradas();
     });
   }
   
   // Carregar pendências iniciais após um delay para garantir que os selects estejam populados
   setTimeout(() => {
-    console.log('Tentando carregar pendências iniciais...');
     carregarPendenciasRegistradas();
   }, 1500);
 
@@ -402,21 +381,17 @@ function configurarSubmenuCadastros() {
     return;
   }
   
-  console.log('Configurando submenu Cadastros');
-  
   // Detectar se algum item do submenu está ativo
   const activeSubitem = cadastrosSubmenu.querySelector('.sidebar-nav-subitem.active');
   let shouldBeExpanded = false;
   
   if (activeSubitem) {
     shouldBeExpanded = true;
-    console.log('Submenu deve expandir porque há item ativo');
   } else {
     // Carregar estado salvo
     const savedExpanded = localStorage.getItem('cadastrosSubmenuExpanded');
     if (savedExpanded === 'true') {
       shouldBeExpanded = true;
-      console.log('Submenu deve expandir por estado salvo');
     }
   }
   
@@ -441,8 +416,6 @@ function configurarSubmenuCadastros() {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('Clique no toggle Cadastros');
-    
     const menu = document.getElementById('cadastrosSubmenu');
     const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
     const newState = !isExpanded;
@@ -452,11 +425,9 @@ function configurarSubmenuCadastros() {
     if (newState) {
       menu.classList.add('show');
       menu.style.display = 'flex';
-      console.log('Submenu expandido');
     } else {
       menu.classList.remove('show');
       menu.style.display = 'none';
-      console.log('Submenu colapsado');
     }
     
     // Salvar estado
@@ -492,7 +463,7 @@ async function verificarAutenticacao() {
     currentUser = await response.json();
     atualizarNomeUsuarioSidebar();
   } catch (error) {
-    console.error('Erro ao verificar autenticação:', error);
+    // Erro de rede ou servidor - redirecionar para login silenciosamente
     window.location.href = '/login.html';
   }
 }
@@ -574,12 +545,6 @@ function atualizarSelectsLocais() {
   }
   
   
-  // Log para debug
-  if (locaisCadastrados.length > 0) {
-    console.log(`Locais carregados: ${locaisCadastrados.length}`);
-  } else {
-    console.warn('Nenhum local cadastrado encontrado');
-  }
 }
 
 // Atualizar todos os selects de prestadores
@@ -673,23 +638,14 @@ function iniciarGPS() {
 
   // Obter posição inicial
   navigator.geolocation.getCurrentPosition(
-    (position) => {
-      console.log('GPS obtido:', position.coords);
-    },
-    (error) => {
-      console.warn('Erro ao obter GPS:', error.message);
-    }
+    () => {},
+    () => {}
   );
 
   // Monitorar mudanças de posição (opcional, para atualizar se o usuário se mover)
   watchId = navigator.geolocation.watchPosition(
-    (position) => {
-      // GPS atualizado
-      console.log('GPS atualizado:', position.coords);
-    },
-    (error) => {
-      console.warn('Erro ao monitorar GPS:', error.message);
-    },
+    () => {},
+    () => {},
     {
       enableHighAccuracy: true,
       timeout: 10000,

@@ -149,7 +149,7 @@ function configurarSubmenuServicos() {
   const servicosToggle = document.getElementById('servicosToggle');
   const servicosSubmenu = document.getElementById('servicosSubmenu');
   if (!servicosToggle || !servicosSubmenu) {
-    console.error('Elementos do submenu Serviços não encontrados');
+    // Elementos podem não existir em todas as páginas - não é erro crítico
     return;
   }
   
@@ -186,7 +186,6 @@ function configurarSubmenuServicos() {
     const menu = document.getElementById('servicosSubmenu');
     const toggle = document.getElementById('servicosToggle');
     if (!menu || !toggle) {
-      console.error('Elementos do menu Serviços não encontrados');
       return;
     }
     const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
@@ -211,7 +210,7 @@ function configurarSubmenuCadastros() {
   const cadastrosToggle = document.getElementById('cadastrosToggle');
   const cadastrosSubmenu = document.getElementById('cadastrosSubmenu');
   if (!cadastrosToggle || !cadastrosSubmenu) {
-    console.error('Elementos do submenu Cadastros não encontrados');
+    // Elementos podem não existir em todas as páginas - não é erro crítico
     return;
   }
   
@@ -254,7 +253,6 @@ function configurarSubmenuCadastros() {
     const menu = document.getElementById('cadastrosSubmenu');
     const toggle = document.getElementById('cadastrosToggle');
     if (!menu || !toggle) {
-      console.error('Elementos do menu Cadastros não encontrados');
       return;
     }
     const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
@@ -331,7 +329,7 @@ async function verificarAutenticacao() {
       window.location.href = '/login.html';
     }
   } catch (error) {
-    console.error('Erro ao verificar autenticação:', error);
+    // Erro de rede ou servidor - redirecionar para login silenciosamente
     window.location.href = '/login.html';
   }
 }
@@ -348,7 +346,8 @@ async function carregarObras() {
       atualizarSelectObras();
     }
   } catch (error) {
-    console.error('Erro ao carregar obras:', error);
+    // Erro ao carregar obras - não crítico, apenas não popula o select
+    // Silenciar erro para não poluir console
   }
 }
 
@@ -381,7 +380,8 @@ async function carregarLocais() {
       atualizarSelectLocais();
     }
   } catch (error) {
-    console.error('Erro ao carregar locais:', error);
+    // Erro ao carregar locais - não crítico, apenas não popula o select
+    // Silenciar erro para não poluir console
   }
 }
 
@@ -427,13 +427,16 @@ async function carregarDadosDashboard() {
     dadosDashboard = await response.json();
     renderizarObras();
   } catch (error) {
-    console.error('Erro ao carregar dados do dashboard:', error);
-    document.getElementById('obrasDashboard').innerHTML = `
-      <p class="empty" style="color: var(--ios-red); padding: 20px; text-align: center;">
-        <strong>Erro ao carregar obras</strong><br>
-        <span style="font-size: 13px; color: var(--ios-text-secondary);">${error.message || 'Erro desconhecido'}</span>
-      </p>
-    `;
+    // Mostrar erro na UI mas não poluir console com erros esperados
+    const obrasContainer = document.getElementById('obrasDashboard');
+    if (obrasContainer) {
+      obrasContainer.innerHTML = `
+        <p class="empty" style="color: var(--ios-red); padding: 20px; text-align: center;">
+          <strong>Erro ao carregar obras</strong><br>
+          <span style="font-size: 13px; color: var(--ios-text-secondary);">${error.message || 'Erro desconhecido'}</span>
+        </p>
+      `;
+    }
   }
 }
 
@@ -487,8 +490,13 @@ function renderizarObras() {
               </p>
             ` : ''}
           </div>
-          <div class="dashboard-obra-status ${obra.ativo ? 'ativo' : 'inativo'}">
-            ${obra.ativo ? 'Ativa' : 'Inativa'}
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button type="button" class="btn-export-obra-pdf" onclick="exportarObraPDF(${index})" aria-label="Exportar obra em PDF" title="Exportar em PDF">
+              <i data-lucide="download"></i>
+            </button>
+            <div class="dashboard-obra-status ${obra.ativo ? 'ativo' : 'inativo'}">
+              ${obra.ativo ? 'Ativa' : 'Inativa'}
+            </div>
           </div>
         </div>
         
@@ -647,6 +655,244 @@ function formatarData(dataStr) {
   }
 }
 
+async function exportarObraPDF(obraIndex) {
+  const obras = dadosDashboard.obras || [];
+  if (!obras || obras.length === 0 || obraIndex < 0 || obraIndex >= obras.length) {
+    mostrarMensagem('Obra não encontrada', 'error');
+    return;
+  }
+
+  const obra = obras[obraIndex];
+  if (!obra) {
+    mostrarMensagem('Obra não encontrada', 'error');
+    return;
+  }
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    let yPos = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const maxWidth = pageWidth - (margin * 2);
+
+    // Título
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Obra', margin, yPos);
+    yPos += 12;
+
+    // Informações da obra
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    const obraNome = obra.descricao || obra.nome || 'Sem nome';
+    doc.text(obraNome, margin, yPos);
+    yPos += 8;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    if (obra.local) {
+      doc.text(`Local: ${obra.local}`, margin, yPos);
+      yPos += 6;
+    }
+    doc.text(`Status: ${obra.ativo ? 'Ativa' : 'Inativa'}`, margin, yPos);
+    yPos += 8;
+
+    // Filtros aplicados
+    const obraFilter = document.getElementById('obraFilter')?.value || '';
+    const localFilter = document.getElementById('localFilter')?.value || '';
+    const dataInicio = document.getElementById('dataInicio')?.value || '';
+    const dataFim = document.getElementById('dataFim')?.value || '';
+    
+    if (obraFilter || localFilter || dataInicio || dataFim) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Filtros aplicados:', margin, yPos);
+      yPos += 5;
+      if (obraFilter) {
+        doc.text(`  Obra: ${obraFilter}`, margin + 5, yPos);
+        yPos += 5;
+      }
+      if (localFilter) {
+        doc.text(`  Local: ${localFilter}`, margin + 5, yPos);
+        yPos += 5;
+      }
+      if (dataInicio) {
+        doc.text(`  Data início: ${formatarData(dataInicio)}`, margin + 5, yPos);
+        yPos += 5;
+      }
+      if (dataFim) {
+        doc.text(`  Data fim: ${formatarData(dataFim)}`, margin + 5, yPos);
+        yPos += 5;
+      }
+      yPos += 5;
+    }
+
+    // Resumo Financeiro
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumo Financeiro', margin, yPos);
+    yPos += 8;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    const saldo = obra.valorPrevisto - obra.totalCompras - obra.totalPagamentos;
+    const percentualGasto = obra.valorPrevisto > 0 ? ((obra.totalCompras + obra.totalPagamentos) / obra.valorPrevisto * 100) : 0;
+    const totalGasto = obra.totalCompras + obra.totalPagamentos;
+
+    doc.text(`Valor Previsto: ${formatarMoeda(obra.valorPrevisto)}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Total Gasto: ${formatarMoeda(totalGasto)}`, margin, yPos);
+    yPos += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Saldo: ${formatarMoeda(saldo)}`, margin, yPos);
+    yPos += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Progresso Financeiro: ${percentualGasto.toFixed(1)}%`, margin, yPos);
+    yPos += 10;
+
+    // Verificar se precisa de nova página
+    if (yPos > pageHeight - 60) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    // Compras
+    if (obra.compras && obra.compras.length > 0) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Compras (${obra.compras.length}) - Total: ${formatarMoeda(obra.totalCompras)}`, margin, yPos);
+      yPos += 8;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      
+      obra.compras.forEach((compra, idx) => {
+        if (yPos > pageHeight - 40) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${idx + 1}. ${compra.descricao || 'Sem descrição'}`, margin, yPos);
+        yPos += 5;
+        
+        doc.setFont('helvetica', 'normal');
+        let detalhes = [];
+        if (compra.local) detalhes.push(`Local: ${compra.local}`);
+        if (compra.data) detalhes.push(`Data: ${formatarData(compra.data)}`);
+        if (detalhes.length > 0) {
+          doc.text(detalhes.join(' | '), margin + 5, yPos);
+          yPos += 5;
+        }
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Valor: ${formatarMoeda(compra.valor)}`, margin + 5, yPos);
+        yPos += 7;
+      });
+      
+      yPos += 5;
+    }
+
+    // Verificar se precisa de nova página
+    if (yPos > pageHeight - 60) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    // Pagamentos
+    if (obra.pagamentos && obra.pagamentos.length > 0) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Pagamentos (${obra.pagamentos.length}) - Total: ${formatarMoeda(obra.totalPagamentos)}`, margin, yPos);
+      yPos += 8;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      
+      obra.pagamentos.forEach((pagamento, idx) => {
+        if (yPos > pageHeight - 40) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${idx + 1}. ${pagamento.descricao || 'Sem descrição'}`, margin, yPos);
+        yPos += 5;
+        
+        doc.setFont('helvetica', 'normal');
+        let detalhes = [];
+        if (pagamento.prestador) detalhes.push(`Prestador: ${pagamento.prestador}`);
+        if (pagamento.local) detalhes.push(`Local: ${pagamento.local}`);
+        if (pagamento.data) detalhes.push(`Data: ${formatarData(pagamento.data)}`);
+        if (detalhes.length > 0) {
+          doc.text(detalhes.join(' | '), margin + 5, yPos);
+          yPos += 5;
+        }
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Valor: ${formatarMoeda(pagamento.valor)}`, margin + 5, yPos);
+        yPos += 7;
+      });
+      
+      yPos += 5;
+    }
+
+    // Verificar se precisa de nova página
+    if (yPos > pageHeight - 60) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    // Resumo Geral
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumo Geral', margin, yPos);
+    yPos += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total de Compras: ${obra.compras?.length || 0}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Total de Pagamentos: ${obra.pagamentos?.length || 0}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Pendências Abertas: ${obra.pendenciasAbertas || 0}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Total de Serviços: ${obra.totalServicos || 0}`, margin, yPos);
+    yPos += 10;
+
+    // Data de geração
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'italic');
+    const dataGeracao = new Date().toLocaleString('pt-BR');
+    doc.text(`Gerado em: ${dataGeracao}`, margin, pageHeight - 10);
+
+    // Salvar PDF
+    const nomeArquivo = `obra_${obraNome.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(nomeArquivo);
+    
+    mostrarMensagem('Relatório da obra exportado com sucesso!', 'success');
+  } catch (error) {
+    // Mostrar erro na UI mas não poluir console
+    mostrarMensagem('Erro ao exportar PDF: ' + error.message, 'error');
+  }
+}
+
+function mostrarMensagem(texto, tipo) {
+  const messageDiv = document.getElementById('message');
+  if (!messageDiv) return;
+  
+  messageDiv.textContent = texto;
+  messageDiv.className = `message ${tipo}`;
+  messageDiv.style.display = 'block';
+
+  setTimeout(() => {
+    messageDiv.style.display = 'none';
+  }, 5000);
+}
+
 async function fazerLogout() {
   try {
     await fetch('/api/auth/logout', {
@@ -655,7 +901,7 @@ async function fazerLogout() {
     });
     window.location.href = '/login.html';
   } catch (error) {
-    console.error('Erro ao fazer logout:', error);
+    // Erro ao fazer logout - redirecionar mesmo assim
     window.location.href = '/login.html';
   }
 }

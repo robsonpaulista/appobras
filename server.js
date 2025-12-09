@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { diarioRoutes } from './routes/diario.routes.js';
 import { dashboardRoutes } from './routes/dashboard.routes.js';
 import { authRoutes } from './routes/auth.routes.js';
@@ -21,23 +23,91 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Middlewares
-app.use(cors({
-  origin: true,
-  credentials: true,
+// Validar SESSION_SECRET em produção
+if (isProduction && !process.env.SESSION_SECRET) {
+  console.error('ERRO CRÍTICO: SESSION_SECRET não definido em produção!');
+  process.exit(1);
+}
+
+// Headers de segurança com Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'", "https://unpkg.com"],
+      connectSrc: ["'self'", "https://unpkg.com"], // Permitir unpkg.com para source maps
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Necessário para alguns recursos
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Configurar CORS adequadamente
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : (isProduction ? [] : ['http://localhost:3000']);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permitir requisições sem origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    // Em desenvolvimento, permitir localhost
+    if (!isProduction && origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
+    // Em produção, verificar lista de origens permitidas
+    if (isProduction && allowedOrigins.length > 0) {
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error('Não permitido pelo CORS'));
+      }
+    }
+    
+    // Se não houver lista definida em produção, permitir todas (não recomendado)
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Rate limiting global
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // máximo 100 requisições por IP por janela
+  message: 'Muitas requisições deste IP, tente novamente mais tarde.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/', limiter);
+
+// Limitar tamanho do payload
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Configuração de sessão
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'diario-obra-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || (isProduction ? null : 'dev-secret-key-change-in-production'),
   resave: false,
   saveUninitialized: false,
+  name: 'sessionId', // Não usar nome padrão
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction ? true : false, // HTTPS apenas em produção
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    sameSite: isProduction ? 'strict' : 'lax', // Proteção CSRF
+    domain: process.env.COOKIE_DOMAIN || undefined,
   },
+  // Em produção, usar store adequado (Redis, etc)
+  // Por enquanto, usar memória (não recomendado para múltiplas instâncias)
 }));
 app.use(express.static(join(__dirname, 'public')));
 app.use('/uploads', express.static(join(__dirname, 'uploads')));

@@ -73,7 +73,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       }
     }
   } catch (error) {
-    console.error('Erro:', error);
+    // Não logar erro de rede no console para não poluir
     mostrarMensagem('Erro de conexão. Verifique sua internet e tente novamente.', 'error');
     loginBtn.disabled = false;
     loginBtn.classList.remove('loading');
@@ -104,6 +104,11 @@ async function verificarAutenticacao() {
       credentials: 'include',
     });
 
+    // 401 é esperado se não estiver autenticado - não tratar como erro
+    if (response.status === 401) {
+      return; // Usuário não está logado, permanece na página de login
+    }
+
     if (response.ok) {
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -114,8 +119,9 @@ async function verificarAutenticacao() {
       }
     }
   } catch (error) {
-    // Não autenticado ou servidor não está respondendo, permanece na página de login
-    console.log('Não autenticado ou servidor não disponível');
+    // Erro de rede ou servidor não disponível
+    // Silenciar erro pois é comportamento esperado na página de login
+    // quando o servidor não está disponível ou usuário não está autenticado
   }
 }
 

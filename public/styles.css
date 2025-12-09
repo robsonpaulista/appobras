@@ -2545,6 +2545,40 @@ textarea.input-field {
   stroke-width: 2;
 }
 
+/* Botão de exportar obra em PDF */
+.btn-export-obra-pdf {
+  background: transparent;
+  color: var(--ios-text-secondary);
+  border: 1px solid var(--ios-separator);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-export-obra-pdf:hover {
+  background: var(--ios-bg-hover);
+  color: var(--ios-text-primary);
+  border-color: var(--ios-border);
+}
+
+.btn-export-obra-pdf:active {
+  background: var(--ios-bg-selected);
+  opacity: 0.7;
+}
+
+.btn-export-obra-pdf i {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+
 .dashboard-obra-stat {
   position: relative;
 }
@@ -3221,6 +3255,8 @@ textarea.input-field {
   .container {
     margin-left: 0 !important;
     padding: 16px;
+    width: 100%;
+    max-width: 100%;
   }
 
   .menu-toggle {
@@ -3229,6 +3265,7 @@ textarea.input-field {
 
   .form-section {
     padding: 0;
+    margin-bottom: 24px;
   }
 
   .header-top {
@@ -3254,6 +3291,15 @@ textarea.input-field {
 
   .subtitle {
     font-size: 12px;
+  }
+
+  /* Ajustes para resumo financeiro em tablets */
+  .obra-resumo-header {
+    flex-wrap: wrap;
+  }
+
+  .obra-resumo-totais {
+    flex-wrap: wrap;
   }
 
   .form-header-fields {
@@ -3321,13 +3367,14 @@ textarea.input-field {
   }
 
   .filters {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .filters .btn-submit {
-    grid-column: 1 / -1;
+    grid-column: 1;
     width: 100%;
+    margin-top: 0;
   }
 
   .relatorios-grid {
@@ -3346,16 +3393,96 @@ textarea.input-field {
   }
 
   .form-section {
-    padding: 16px;
+    padding: 0;
+    margin-bottom: 24px;
   }
 
   .form-section h2 {
-    font-size: 20px;
+    font-size: 18px;
+    margin-bottom: 12px;
   }
 
   .input-field {
     padding: 12px;
     font-size: 16px; /* Previne zoom no iOS */
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .filters .input-field,
+  .filters select {
+    width: 100%;
+    font-size: 16px; /* Previne zoom no iOS */
+  }
+
+  .filters input[type="date"] {
+    font-size: 16px; /* Previne zoom no iOS */
+    min-height: 44px; /* Tamanho mínimo para touch */
+  }
+
+  .filters .btn-submit {
+    width: 100%;
+    margin-top: 0;
+    min-height: 44px; /* Tamanho mínimo para touch */
+  }
+
+  /* Ajustes para resumo financeiro */
+  .obra-resumo-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .obra-resumo-title {
+    width: 100%;
+  }
+
+  .obra-resumo-totais {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 0.5px solid var(--ios-separator);
+    border-left: none;
+  }
+
+  .total-item.total-saldo {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    padding-top: 12px;
+    border-top: 0.5px solid var(--ios-separator);
+    width: 100%;
+  }
+
+  .obra-resumo-local {
+    margin-left: 0;
+    margin-top: 4px;
+  }
+
+  .detalhe-item {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .detalhe-valor {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+
+  /* Ajustes para formulário de pagamento */
+  .ios-grouped-container {
+    margin-bottom: 16px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    margin-top: 16px;
   }
 }
 
