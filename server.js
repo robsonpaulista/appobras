@@ -41,19 +41,10 @@ if (isProduction && !process.env.SESSION_SECRET) {
 }
 
 // Headers de segurança com Helmet
+// Desabilitar CSP temporariamente para permitir event handlers inline
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
-      // Não incluir scriptSrcAttr - isso permite que event handlers inline funcionem
-      imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
-      connectSrc: ["'self'", "https://unpkg.com", "https://cdnjs.cloudflare.com"], // Permitir unpkg.com e cdnjs para source maps
-    },
-  },
-  crossOriginEmbedderPolicy: false, // Necessário para alguns recursos
+  contentSecurityPolicy: false, // Desabilitar CSP completamente
+  crossOriginEmbedderPolicy: false,
 }));
 
 // Configurar CORS adequadamente
