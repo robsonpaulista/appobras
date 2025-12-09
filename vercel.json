@@ -12,9 +12,15 @@
       "dest": "/api/index.js"
     },
     {
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map))",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/index.js"
     }
   ]
 }
-
