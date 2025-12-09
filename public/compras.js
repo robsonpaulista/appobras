@@ -28,6 +28,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Preview do arquivo
   document.getElementById('anexo').addEventListener('change', handleFileChange);
   
+  // Configurar botões do modal
+  const closeEditModal = document.getElementById('closeEditModal');
+  const cancelEditModal = document.getElementById('cancelEditModal');
+  if (closeEditModal) {
+    closeEditModal.addEventListener('click', fecharModalEdicao);
+  }
+  if (cancelEditModal) {
+    cancelEditModal.addEventListener('click', fecharModalEdicao);
+  }
+  
   // Inicializar ícones
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
@@ -340,15 +350,30 @@ function exibirCompras(compras) {
         </div>
       </div>
       <div class="compra-actions">
-        <button type="button" class="btn-edit" onclick="editarCompra('${compra.id}')" aria-label="Editar compra" title="Editar">
+        <button type="button" class="btn-edit" data-action="edit" data-id="${compra.id}" aria-label="Editar compra" title="Editar">
           <i data-lucide="edit-2"></i>
         </button>
-        <button type="button" class="btn-remove" onclick="deletarCompra('${compra.id}')" aria-label="Deletar compra" title="Excluir">
+        <button type="button" class="btn-remove" data-action="delete" data-id="${compra.id}" aria-label="Deletar compra" title="Excluir">
           <i data-lucide="trash-2"></i>
         </button>
       </div>
     </div>
   `).join('');
+  
+  // Adicionar event listeners usando delegação de eventos
+  container.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-action]');
+    if (!button) return;
+    
+    const action = button.getAttribute('data-action');
+    const id = button.getAttribute('data-id');
+    
+    if (action === 'edit' && id) {
+      editarCompra(id);
+    } else if (action === 'delete' && id) {
+      deletarCompra(id);
+    }
+  });
   
   // Reinicializar ícones
   if (typeof lucide !== 'undefined') {

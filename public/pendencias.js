@@ -12,6 +12,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Configurar formulário de edição
   document.getElementById('editPendenciaForm').addEventListener('submit', atualizarPendencia);
   
+  // Configurar botões do modal
+  const closeEditModal = document.getElementById('closeEditModal');
+  const cancelEditModal = document.getElementById('cancelEditModal');
+  if (closeEditModal) {
+    closeEditModal.addEventListener('click', fecharModalEdicao);
+  }
+  if (cancelEditModal) {
+    cancelEditModal.addEventListener('click', fecharModalEdicao);
+  }
+  
   // Configurar sidebar
   configurarSidebar();
   
@@ -404,10 +414,10 @@ async function carregarPendencias() {
             </div>
           </div>
           <div class="compra-actions">
-            <button type="button" class="btn-edit" onclick="editarPendencia('${pendencia.id}')" aria-label="Editar pendência" title="Editar">
+            <button type="button" class="btn-edit" data-action="edit" data-id="${pendencia.id}" aria-label="Editar pendência" title="Editar">
               <i data-lucide="edit-2"></i>
             </button>
-            <button type="button" class="btn-remove" onclick="deletarPendencia('${pendencia.id}')" aria-label="Deletar pendência" title="Excluir">
+            <button type="button" class="btn-remove" data-action="delete" data-id="${pendencia.id}" aria-label="Deletar pendência" title="Excluir">
               <i data-lucide="trash-2"></i>
             </button>
           </div>
@@ -417,6 +427,21 @@ async function carregarPendencias() {
       });
       
       pendenciasList.appendChild(dataContainer);
+      
+      // Adicionar event listeners usando delegação de eventos
+      dataContainer.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-action]');
+        if (!button) return;
+        
+        const action = button.getAttribute('data-action');
+        const id = button.getAttribute('data-id');
+        
+        if (action === 'edit' && id) {
+          editarPendencia(id);
+        } else if (action === 'delete' && id) {
+          deletarPendencia(id);
+        }
+      });
     });
 
     // Reinicializar ícones

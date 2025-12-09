@@ -295,11 +295,11 @@ function exibirUsuarios(usuarios) {
         </div>
       </div>
       <div class="compra-actions">
-        <button type="button" class="btn-edit" onclick="editarUsuario('${usuario.id}')" aria-label="Editar usuário" title="Editar">
+        <button type="button" class="btn-edit" data-action="edit" data-id="${usuario.id}" aria-label="Editar usuário" title="Editar">
           <i data-lucide="edit-2"></i>
         </button>
         ${usuario.id !== currentUser?.id ? `
-        <button type="button" class="btn-remove" onclick="deletarUsuario('${usuario.id}')" aria-label="Deletar usuário" title="Excluir">
+        <button type="button" class="btn-remove" data-action="delete" data-id="${usuario.id}" aria-label="Deletar usuário" title="Excluir">
           <i data-lucide="trash-2"></i>
         </button>
         ` : ''}
@@ -307,6 +307,21 @@ function exibirUsuarios(usuarios) {
     </div>
   `;
   }).join('');
+
+  // Adicionar event listeners usando delegação de eventos
+  listContainer.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-action]');
+    if (!button) return;
+    
+    const action = button.getAttribute('data-action');
+    const id = button.getAttribute('data-id');
+    
+    if (action === 'edit' && id) {
+      editarUsuario(id);
+    } else if (action === 'delete' && id) {
+      deletarUsuario(id);
+    }
+  });
 
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();

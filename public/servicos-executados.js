@@ -12,6 +12,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Configurar formulário de edição
   document.getElementById('editServicoForm').addEventListener('submit', atualizarServico);
   
+  // Configurar botões do modal
+  const closeEditModal = document.getElementById('closeEditModal');
+  const cancelEditModal = document.getElementById('cancelEditModal');
+  if (closeEditModal) {
+    closeEditModal.addEventListener('click', fecharModalEdicao);
+  }
+  if (cancelEditModal) {
+    cancelEditModal.addEventListener('click', fecharModalEdicao);
+  }
+  
   // Configurar sidebar
   configurarSidebar();
   
@@ -396,10 +406,10 @@ async function carregarServicosExecutados() {
             </div>
           </div>
           <div class="compra-actions">
-            <button type="button" class="btn-edit" onclick="editarServico('${servico.id}')" aria-label="Editar serviço" title="Editar">
+            <button type="button" class="btn-edit" data-action="edit" data-id="${servico.id}" aria-label="Editar serviço" title="Editar">
               <i data-lucide="edit-2"></i>
             </button>
-            <button type="button" class="btn-remove" onclick="deletarServico('${servico.id}')" aria-label="Deletar serviço" title="Excluir">
+            <button type="button" class="btn-remove" data-action="delete" data-id="${servico.id}" aria-label="Deletar serviço" title="Excluir">
               <i data-lucide="trash-2"></i>
             </button>
           </div>
@@ -409,6 +419,21 @@ async function carregarServicosExecutados() {
       });
       
       servicosList.appendChild(dataContainer);
+      
+      // Adicionar event listeners usando delegação de eventos
+      dataContainer.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-action]');
+        if (!button) return;
+        
+        const action = button.getAttribute('data-action');
+        const id = button.getAttribute('data-id');
+        
+        if (action === 'edit' && id) {
+          editarServico(id);
+        } else if (action === 'delete' && id) {
+          deletarServico(id);
+        }
+      });
     });
 
     // Reinicializar ícones
