@@ -47,7 +47,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
-      scriptSrcAttr: false, // Desabilitar scriptSrcAttr para permitir todos os event handlers inline
+      // Não incluir scriptSrcAttr - isso permite que event handlers inline funcionem
       imgSrc: ["'self'", "data:", "https:"],
       fontSrc: ["'self'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
       connectSrc: ["'self'", "https://unpkg.com", "https://cdnjs.cloudflare.com"], // Permitir unpkg.com e cdnjs para source maps
