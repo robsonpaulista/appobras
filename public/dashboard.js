@@ -862,6 +862,55 @@ async function exportarObraPDF(obraIndex) {
       yPos = 20;
     }
 
+    // Pendências
+    if (obra.pendencias && obra.pendencias.length > 0) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Pendências Abertas (${obra.pendencias.length})`, margin, yPos);
+      yPos += 8;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      
+      obra.pendencias.forEach((pendencia, idx) => {
+        if (yPos > pageHeight - 40) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${idx + 1}. ${pendencia.descricao || 'Sem descrição'}`, margin, yPos);
+        yPos += 5;
+        
+        doc.setFont('helvetica', 'normal');
+        let detalhes = [];
+        if (pendencia.prioridade) detalhes.push(`Prioridade: ${pendencia.prioridade}`);
+        if (pendencia.responsavel) detalhes.push(`Responsável: ${pendencia.responsavel}`);
+        if (detalhes.length > 0) {
+          doc.text(detalhes.join(' | '), margin + 5, yPos);
+          yPos += 5;
+        }
+        
+        let detalhes2 = [];
+        if (pendencia.local) detalhes2.push(`Local: ${pendencia.local}`);
+        if (pendencia.data) detalhes2.push(`Data: ${formatarData(pendencia.data)}`);
+        if (detalhes2.length > 0) {
+          doc.text(detalhes2.join(' | '), margin + 5, yPos);
+          yPos += 5;
+        }
+        
+        yPos += 3;
+      });
+      
+      yPos += 5;
+    }
+
+    // Verificar se precisa de nova página
+    if (yPos > pageHeight - 60) {
+      doc.addPage();
+      yPos = 20;
+    }
+
     // Resumo Geral
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');

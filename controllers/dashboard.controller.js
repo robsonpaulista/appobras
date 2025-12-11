@@ -89,6 +89,14 @@ export async function buscarDadosDashboard(req, res) {
           local: p.local || '',
           prestador: p.prestador || '',
         })),
+        pendencias: pendenciasObra.map(p => ({
+          descricao: p.descricao || 'Sem descrição',
+          prioridade: p.prioridade || 'Média',
+          responsavel: p.responsavel || '',
+          data: p.data || '',
+          local: p.local || '',
+          status: p.status || 'Pendente',
+        })),
       };
     });
     
