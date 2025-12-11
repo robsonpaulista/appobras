@@ -13,3 +13,9 @@ router.delete('/:id', requireAuth, requireAdmin, usuariosController.deletar);
 
 export const usuariosRoutes = router;
 
+
+
+
+
+
+

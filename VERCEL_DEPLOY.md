@@ -112,3 +112,9 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    - Configurar testes automáticos
    - Deploy automático apenas após testes passarem
 
+
+
+
+
+
+

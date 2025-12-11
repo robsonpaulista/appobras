@@ -134,3 +134,9 @@ O aplicativo está **seguro para deploy em produção** com as configurações a
 
 **Recomendação:** Implementar melhorias de prioridade média após o deploy inicial para maior robustez e escalabilidade.
 
+
+
+
+
+
+

@@ -105,3 +105,9 @@ npm run validate
 
 Este comando verifica se todas as variáveis obrigatórias estão definidas.
 
+
+
+
+
+
+

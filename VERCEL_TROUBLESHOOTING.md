@@ -117,3 +117,9 @@ Se o erro persistir:
 3. Verifique se todas as dependências estão instaladas
 4. Teste localmente com `vercel dev`
 
+
+
+
+
+
+

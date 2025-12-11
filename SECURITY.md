@@ -100,3 +100,9 @@ Todas as rotas `/api/*` (exceto `/api/auth/login`) requerem autenticação.
 
 Para questões de segurança, entre em contato com a equipe de desenvolvimento.
 
+
+
+
+
+
+

@@ -69,3 +69,9 @@ vercel dev
 
 Isso simula o ambiente do Vercel e ajuda a identificar problemas antes do deploy.
 
+
+
+
+
+
+
